@@ -71,3 +71,5 @@ You should see `super_admin` in the `role_name` column.
 3. Verify the role was assigned using the verification query above
 4. Make sure your `app_user` record exists and is linked to your auth user
 
+
+

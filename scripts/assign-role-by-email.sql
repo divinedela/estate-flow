@@ -70,3 +70,5 @@ JOIN roles r ON ur.role_id = r.id
 LEFT JOIN organizations o ON ur.organization_id = o.id
 WHERE au.email = 'your-email@example.com'; -- ⚠️ REPLACE THIS with your email
 
+
+

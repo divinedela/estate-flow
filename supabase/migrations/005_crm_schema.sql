@@ -231,3 +231,5 @@ CREATE TRIGGER check_overdue_followup
     WHEN (NEW.next_follow_up_date IS NOT NULL)
     EXECUTE FUNCTION notify_overdue_followup();
 
+
+

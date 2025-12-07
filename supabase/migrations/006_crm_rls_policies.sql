@@ -200,3 +200,5 @@ CREATE POLICY "Marketing can manage interactions"
         OR public.user_has_role('marketing_officer')
     );
 
+
+

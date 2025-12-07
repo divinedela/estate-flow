@@ -88,3 +88,5 @@ LEFT JOIN roles r ON ur.role_id = r.id
 GROUP BY au.id, au.email, app.id, app.full_name
 ORDER BY au.email;
 
+
+

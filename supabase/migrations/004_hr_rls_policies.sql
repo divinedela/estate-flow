@@ -241,3 +241,5 @@ CREATE POLICY "HR can manage payroll"
         OR public.user_has_role('hr_manager')
     );
 
+
+

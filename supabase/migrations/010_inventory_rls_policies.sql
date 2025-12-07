@@ -150,3 +150,5 @@ CREATE POLICY "Inventory officers can manage reorder rules"
         OR public.user_has_role('inventory_officer')
     );
 
+
+

@@ -193,3 +193,5 @@ CREATE POLICY "Managers can manage preventive maintenance schedules"
         OR public.user_has_role('facility_manager')
     );
 
+
+

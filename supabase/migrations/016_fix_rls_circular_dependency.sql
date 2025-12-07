@@ -66,3 +66,5 @@ CREATE POLICY "Users can view own roles"
         OR public.user_has_role('hr_manager')
     );
 
+
+

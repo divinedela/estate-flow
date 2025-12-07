@@ -312,3 +312,5 @@ CREATE TRIGGER update_inventory_on_grn_completion
     WHEN (NEW.status = 'completed' AND OLD.status != 'completed')
     EXECUTE FUNCTION update_inventory_from_grn();
 
+
+

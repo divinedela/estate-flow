@@ -269,3 +269,5 @@ CREATE POLICY "Procurement can manage invoices"
         OR public.user_has_role('procurement_officer')
     );
 
+
+
