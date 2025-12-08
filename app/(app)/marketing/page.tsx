@@ -19,16 +19,28 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 
-interface Lead {
+interface Contact {
   id: string
   first_name: string
-  last_name: string
+  last_name: string | null
   email: string | null
   phone: string | null
+}
+
+interface Lead {
+  id: string
+  contact_id: string | null
+  contact: Contact | null
   status: string
-  source: string | null
+  lead_source: string | null
+  priority: string | null
+  interest_type: string | null
+  budget_min: number | null
+  budget_max: number | null
+  preferred_location: string | null
+  preferred_property_type: string | null
+  notes: string | null
   created_at: string
-  property_interest: string | null
 }
 
 interface Campaign {
@@ -105,10 +117,19 @@ async function getMarketingStats() {
   const oneWeekAgo = new Date()
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
 
-  // Fetch all leads
+  // Fetch all leads with contact information
   const { data: allLeads } = await supabase
     .from('leads')
-    .select('*')
+    .select(`
+      *,
+      contact:contacts(
+        id,
+        first_name,
+        last_name,
+        email,
+        phone
+      )
+    `)
     .eq('organization_id', orgId)
     .order('created_at', { ascending: false })
 
@@ -124,7 +145,7 @@ async function getMarketingStats() {
   // Leads by source
   const sourceMap = new Map<string, number>()
   leads.forEach(l => {
-    const source = l.source || 'Unknown'
+    const source = l.lead_source || 'Direct'
     sourceMap.set(source, (sourceMap.get(source) || 0) + 1)
   })
   const leadsBySource = Array.from(sourceMap.entries())
@@ -391,40 +412,67 @@ export default async function MarketingPage() {
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Interest</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {stats.recentLeads.map((lead) => (
-                        <tr key={lead.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-                                <span className="text-red-600 font-medium text-sm">
-                                  {(lead.first_name || 'U')[0]}{(lead.last_name || 'N')[0]}
-                                </span>
+                      {stats.recentLeads.map((lead) => {
+                        const firstName = lead.contact?.first_name || 'Unknown'
+                        const lastName = lead.contact?.last_name || ''
+                        const email = lead.contact?.email || null
+                        const phone = lead.contact?.phone || null
+                        const initials = `${firstName[0] || 'U'}${lastName[0] || ''}`
+                        
+                        return (
+                          <tr key={lead.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <Link href={`/marketing/leads/${lead.id}`} className="flex items-center group">
+                                <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                                  <span className="text-red-600 font-medium text-sm">
+                                    {initials}
+                                  </span>
+                                </div>
+                                <div className="ml-3">
+                                  <p className="text-sm font-medium text-gray-900 group-hover:text-indigo-600">
+                                    {firstName} {lastName}
+                                  </p>
+                                  {lead.priority && (
+                                    <span className={`text-xs ${
+                                      lead.priority === 'high' ? 'text-red-500' : 
+                                      lead.priority === 'medium' ? 'text-yellow-500' : 'text-gray-400'
+                                    }`}>
+                                      {lead.priority} priority
+                                    </span>
+                                  )}
+                                </div>
+                              </Link>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <p className="text-sm text-gray-900">{email || '-'}</p>
+                              <p className="text-xs text-gray-500">{phone || '-'}</p>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 capitalize">
+                                {lead.lead_source || 'Direct'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                              <div>
+                                <span className="capitalize">{lead.interest_type || '-'}</span>
+                                {lead.preferred_property_type && (
+                                  <p className="text-xs text-gray-400">{lead.preferred_property_type}</p>
+                                )}
                               </div>
-                              <div className="ml-3">
-                                <p className="text-sm font-medium text-gray-900">
-                                  {lead.first_name || 'Unknown'} {lead.last_name || ''}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <p className="text-sm text-gray-900">{lead.email || '-'}</p>
-                            <p className="text-xs text-gray-500">{lead.phone || '-'}</p>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {lead.source || '-'}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${statusColors[lead.status] || 'bg-gray-500'}`}>
-                              {lead.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white capitalize ${statusColors[lead.status] || 'bg-gray-500'}`}>
+                                {lead.status}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -448,10 +496,25 @@ export default async function MarketingPage() {
                       ? Math.round((item.count / stats.totalLeads) * 100) 
                       : 0
                     const colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500']
+                    // Format source names nicely
+                    const sourceLabels: Record<string, string> = {
+                      'website': 'Website',
+                      'referral': 'Referral',
+                      'walk_in': 'Walk-in',
+                      'campaign': 'Campaign',
+                      'social_media': 'Social Media',
+                      'phone': 'Phone Inquiry',
+                      'email': 'Email',
+                      'agent': 'Agent',
+                      'Direct': 'Direct',
+                      'direct': 'Direct',
+                    }
+                    const displaySource = sourceLabels[item.source] || item.source.replace(/_/g, ' ')
+                    
                     return (
                       <div key={item.source}>
                         <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-gray-700 capitalize">{item.source}</span>
+                          <span className="text-gray-700 capitalize">{displaySource}</span>
                           <span className="font-medium text-gray-900">{item.count} ({percentage}%)</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
