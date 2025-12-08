@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
 import { SupabaseClient } from '@supabase/supabase-js'
 import Link from 'next/link'
+import { DashboardCharts } from './dashboard-charts'
 
 type SupabaseClientType = SupabaseClient<Database>
 
@@ -60,13 +61,54 @@ async function getSuperAdminStats() {
 
 function getEmptyStats() {
   return {
-    projects: { ongoing: 0, onHold: 0, completed: 0, budgetVsActual: '0', overdueTasks: 0 },
-    marketing: { totalLeads: 0, hotLeads: 0, conversionRate: 0, activeCampaigns: 0 },
-    hr: { totalEmployees: 0, activeEmployees: 0, pendingLeave: 0, expiringDocuments: 0 },
-    inventory: { totalItems: 0, lowStockItems: 0 },
-    facilities: { openMaintenance: 0, overdueTickets: 0 },
-    purchasing: { openPRs: 0, pendingApprovals: 0, recentPOs: 0 },
-    system: { totalUsers: 0, activeUsers: 0 },
+    projects: { 
+      ongoing: 0, 
+      onHold: 0, 
+      completed: 0, 
+      budgetVsActual: '0', 
+      overdueTasks: 0,
+      totalBudget: 0,
+      totalActual: 0,
+    },
+    marketing: { 
+      totalLeads: 0, 
+      hotLeads: 0, 
+      warmLeads: 0,
+      coldLeads: 0,
+      convertedLeads: 0,
+      conversionRate: 0, 
+      activeCampaigns: 0,
+      leadTrend: [] as { month: string; leads: number }[],
+    },
+    hr: { 
+      totalEmployees: 0, 
+      activeEmployees: 0, 
+      inactiveEmployees: 0,
+      pendingLeave: 0, 
+      expiringDocuments: 0,
+      departmentDistribution: [] as { name: string; count: number }[],
+    },
+    inventory: { 
+      totalItems: 0, 
+      lowStockItems: 0,
+      inStockItems: 0,
+      outOfStockItems: 0,
+      categoryDistribution: [] as { name: string; count: number }[],
+    },
+    facilities: { 
+      openMaintenance: 0, 
+      overdueTickets: 0,
+      pendingMaintenance: 0,
+      inProgressMaintenance: 0,
+      completedMaintenance: 0,
+    },
+    purchasing: { 
+      openPRs: 0, 
+      pendingApprovals: 0, 
+      recentPOs: 0,
+      poTrend: [] as { month: string; orders: number; amount: number }[],
+    },
+    system: { totalUsers: 0, activeUsers: 0, inactiveUsers: 0 },
   }
 }
 
@@ -130,6 +172,8 @@ async function getProjectStats(supabase: SupabaseClientType, orgId: string) {
     completed: completed || 0,
     budgetVsActual: totalBudget > 0 ? ((totalActual / totalBudget) * 100).toFixed(1) : '0',
     overdueTasks,
+    totalBudget,
+    totalActual,
   }
 }
 
@@ -145,6 +189,18 @@ async function getMarketingStats(supabase: SupabaseClientType, orgId: string) {
     .select('*', { count: 'exact', head: true })
     .eq('organization_id', orgId)
     .eq('status', 'hot')
+
+  const { count: warmLeads } = await supabase
+    .from('leads')
+    .select('*', { count: 'exact', head: true })
+    .eq('organization_id', orgId)
+    .eq('status', 'warm')
+
+  const { count: coldLeads } = await supabase
+    .from('leads')
+    .select('*', { count: 'exact', head: true })
+    .eq('organization_id', orgId)
+    .eq('status', 'cold')
 
   const { count: convertedLeads } = await supabase
     .from('leads')
@@ -162,11 +218,33 @@ async function getMarketingStats(supabase: SupabaseClientType, orgId: string) {
     ? Math.round((convertedLeads || 0) / totalLeads * 100)
     : 0
 
+  // Get lead trend for last 6 months
+  const leadTrend: { month: string; leads: number }[] = []
+  const now = new Date()
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const nextDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)
+    const monthName = date.toLocaleString('default', { month: 'short' })
+    
+    const { count } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', orgId)
+      .gte('created_at', date.toISOString())
+      .lt('created_at', nextDate.toISOString())
+    
+    leadTrend.push({ month: monthName, leads: count || 0 })
+  }
+
   return {
     totalLeads: totalLeads || 0,
     hotLeads: hotLeads || 0,
+    warmLeads: warmLeads || 0,
+    coldLeads: coldLeads || 0,
+    convertedLeads: convertedLeads || 0,
     conversionRate,
     activeCampaigns: activeCampaigns || 0,
+    leadTrend,
   }
 }
 
@@ -183,13 +261,23 @@ async function getHRStats(supabase: SupabaseClientType, orgId: string) {
     .eq('organization_id', orgId)
     .eq('status', 'active')
 
+  const inactiveEmployees = (totalEmployees || 0) - (activeEmployees || 0)
+
   // Get employee IDs for leave and documents
   const { data: employees } = await supabase
     .from('employees')
-    .select('id')
+    .select('id, department')
     .eq('organization_id', orgId)
 
   const employeeIds = employees?.map(e => e.id) || []
+
+  // Department distribution
+  const departmentCounts: Record<string, number> = {}
+  employees?.forEach(e => {
+    const dept = e.department || 'Unassigned'
+    departmentCounts[dept] = (departmentCounts[dept] || 0) + 1
+  })
+  const departmentDistribution = Object.entries(departmentCounts).map(([name, count]) => ({ name, count }))
 
   // Pending leave requests
   const { count: pendingLeave } = employeeIds.length > 0
@@ -217,8 +305,10 @@ async function getHRStats(supabase: SupabaseClientType, orgId: string) {
   return {
     totalEmployees: totalEmployees || 0,
     activeEmployees: activeEmployees || 0,
+    inactiveEmployees,
     pendingLeave: pendingLeave || 0,
     expiringDocuments: expiringDocuments || 0,
+    departmentDistribution,
   }
 }
 
@@ -230,15 +320,25 @@ async function getInventoryStats(supabase: SupabaseClientType, orgId: string) {
     .eq('organization_id', orgId)
     .eq('is_active', true)
 
-  // Get items with reorder rules to check low stock
+  // Get items with categories
   const { data: items } = await supabase
     .from('items')
-    .select('id')
+    .select('id, category')
     .eq('organization_id', orgId)
     .eq('is_active', true)
 
+  // Category distribution
+  const categoryCounts: Record<string, number> = {}
+  items?.forEach(i => {
+    const cat = i.category || 'Uncategorized'
+    categoryCounts[cat] = (categoryCounts[cat] || 0) + 1
+  })
+  const categoryDistribution = Object.entries(categoryCounts).map(([name, count]) => ({ name, count }))
+
   const itemIds = items?.map(i => i.id) || []
   let lowStockItems = 0
+  let outOfStockItems = 0
+  let inStockItems = 0
 
   if (itemIds.length > 0) {
     // Check items that have stock levels below reorder point
@@ -246,6 +346,8 @@ async function getInventoryStats(supabase: SupabaseClientType, orgId: string) {
       .from('reorder_rules')
       .select('item_id, reorder_point')
       .in('item_id', itemIds)
+
+    const itemsWithRules = new Set(reorderRules?.map(r => r.item_id) || [])
 
     if (reorderRules && reorderRules.length > 0) {
       for (const rule of reorderRules) {
@@ -257,26 +359,52 @@ async function getInventoryStats(supabase: SupabaseClientType, orgId: string) {
         const totalQuantity = stockLevels?.reduce((sum, sl) => 
           sum + (parseFloat(sl.quantity?.toString() || '0') || 0), 0) || 0
 
-        if (totalQuantity <= (parseFloat(rule.reorder_point?.toString() || '0') || 0)) {
+        const reorderPoint = parseFloat(rule.reorder_point?.toString() || '0') || 0
+
+        if (totalQuantity === 0) {
+          outOfStockItems++
+        } else if (totalQuantity <= reorderPoint) {
           lowStockItems++
+        } else {
+          inStockItems++
         }
       }
     }
+
+    // Items without reorder rules - assume they're in stock
+    inStockItems += itemIds.length - itemsWithRules.size
   }
 
   return {
     totalItems: totalItems || 0,
     lowStockItems,
+    inStockItems,
+    outOfStockItems,
+    categoryDistribution,
   }
 }
 
 // Facility Stats
 async function getFacilityStats(supabase: SupabaseClientType, orgId: string) {
-  const { count: openMaintenance } = await supabase
+  const { count: pendingMaintenance } = await supabase
     .from('maintenance_requests')
     .select('*', { count: 'exact', head: true })
     .eq('organization_id', orgId)
-    .in('status', ['pending', 'in_progress'])
+    .eq('status', 'pending')
+
+  const { count: inProgressMaintenance } = await supabase
+    .from('maintenance_requests')
+    .select('*', { count: 'exact', head: true })
+    .eq('organization_id', orgId)
+    .eq('status', 'in_progress')
+
+  const { count: completedMaintenance } = await supabase
+    .from('maintenance_requests')
+    .select('*', { count: 'exact', head: true })
+    .eq('organization_id', orgId)
+    .eq('status', 'completed')
+
+  const openMaintenance = (pendingMaintenance || 0) + (inProgressMaintenance || 0)
 
   // Get overdue maintenance requests (past due date)
   const today = new Date().toISOString().split('T')[0]
@@ -288,8 +416,11 @@ async function getFacilityStats(supabase: SupabaseClientType, orgId: string) {
     .lt('due_date', today)
 
   return {
-    openMaintenance: openMaintenance || 0,
+    openMaintenance,
     overdueTickets: overdueTickets || 0,
+    pendingMaintenance: pendingMaintenance || 0,
+    inProgressMaintenance: inProgressMaintenance || 0,
+    completedMaintenance: completedMaintenance || 0,
   }
 }
 
@@ -317,10 +448,32 @@ async function getPurchasingStats(supabase: SupabaseClientType, orgId: string) {
     .eq('organization_id', orgId)
     .gte('created_at', thirtyDaysAgo.toISOString())
 
+  // Get PO trend for last 6 months
+  const poTrend: { month: string; orders: number; amount: number }[] = []
+  const now = new Date()
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const nextDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)
+    const monthName = date.toLocaleString('default', { month: 'short' })
+    
+    const { count, data } = await supabase
+      .from('purchase_orders')
+      .select('total_amount', { count: 'exact' })
+      .eq('organization_id', orgId)
+      .gte('created_at', date.toISOString())
+      .lt('created_at', nextDate.toISOString())
+    
+    const totalAmount = data?.reduce((sum, po) => 
+      sum + (parseFloat(po.total_amount?.toString() || '0') || 0), 0) || 0
+    
+    poTrend.push({ month: monthName, orders: count || 0, amount: totalAmount })
+  }
+
   return {
     openPRs: openPRs || 0,
     pendingApprovals: pendingApprovals || 0,
     recentPOs: recentPOs || 0,
+    poTrend,
   }
 }
 
@@ -340,6 +493,7 @@ async function getSystemStats(supabase: SupabaseClientType, orgId: string) {
   return {
     totalUsers: totalUsers || 0,
     activeUsers: activeUsers || 0,
+    inactiveUsers: (totalUsers || 0) - (activeUsers || 0),
   }
 }
 
@@ -348,170 +502,281 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Executive Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Overview of your real estate development operations
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Executive Dashboard</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Overview of your real estate development operations
+        </p>
+      </div>
 
-        {/* Projects Section */}
-        <Card title="Projects">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      {/* Projects Section */}
+      <Card title="Projects">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Ongoing Projects</p>
-              <p className="mt-2 text-3xl font-semibold text-blue-600">{stats.projects.ongoing}</p>
+              <p className="text-sm font-medium text-gray-600">Ongoing</p>
+              <p className="mt-1 text-2xl font-semibold text-blue-600">{stats.projects.ongoing}</p>
             </div>
             <div className="text-center p-4 bg-yellow-50 rounded-lg">
               <p className="text-sm font-medium text-gray-600">On Hold</p>
-              <p className="mt-2 text-3xl font-semibold text-yellow-600">{stats.projects.onHold}</p>
+              <p className="mt-1 text-2xl font-semibold text-yellow-600">{stats.projects.onHold}</p>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="mt-2 text-3xl font-semibold text-green-600">{stats.projects.completed}</p>
+              <p className="mt-1 text-2xl font-semibold text-green-600">{stats.projects.completed}</p>
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <p className="text-sm font-medium text-gray-600">Budget Usage</p>
-              <p className="mt-2 text-3xl font-semibold text-purple-600">{stats.projects.budgetVsActual}%</p>
+              <p className="mt-1 text-2xl font-semibold text-purple-600">{stats.projects.budgetVsActual}%</p>
             </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
+            <div className="text-center p-4 bg-red-50 rounded-lg col-span-2 sm:col-span-1">
               <p className="text-sm font-medium text-gray-600">Overdue Tasks</p>
-              <p className="mt-2 text-3xl font-semibold text-red-600">{stats.projects.overdueTasks}</p>
+              <p className="mt-1 text-2xl font-semibold text-red-600">{stats.projects.overdueTasks}</p>
             </div>
           </div>
-          <div className="mt-4">
-            <Link href="/projects" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-              View all projects →
-            </Link>
+          {/* Charts */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Project Status</h4>
+              <DashboardCharts 
+                type="projectStatus" 
+                data={{ 
+                  ongoing: stats.projects.ongoing, 
+                  onHold: stats.projects.onHold, 
+                  completed: stats.projects.completed 
+                }} 
+              />
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Budget vs Actual</h4>
+              <DashboardCharts 
+                type="budget" 
+                data={{ 
+                  budget: stats.projects.totalBudget, 
+                  actual: stats.projects.totalActual 
+                }} 
+              />
+            </div>
           </div>
-        </Card>
+        </div>
+        <div className="mt-4">
+          <Link href="/projects" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
+            View all projects →
+          </Link>
+        </div>
+      </Card>
 
-        {/* Marketing/CRM Section */}
-        <Card title="Marketing & Sales">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Marketing/CRM Section */}
+      <Card title="Marketing & Sales">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Active Leads</p>
-              <p className="mt-2 text-3xl font-semibold text-purple-600">{stats.marketing.totalLeads}</p>
+              <p className="text-sm font-medium text-gray-600">Total Leads</p>
+              <p className="mt-1 text-2xl font-semibold text-purple-600">{stats.marketing.totalLeads}</p>
             </div>
             <div className="text-center p-4 bg-red-50 rounded-lg">
               <p className="text-sm font-medium text-gray-600">Hot Leads</p>
-              <p className="mt-2 text-3xl font-semibold text-red-600">{stats.marketing.hotLeads}</p>
+              <p className="mt-1 text-2xl font-semibold text-red-600">{stats.marketing.hotLeads}</p>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Conversion Rate</p>
-              <p className="mt-2 text-3xl font-semibold text-green-600">{stats.marketing.conversionRate}%</p>
+              <p className="text-sm font-medium text-gray-600">Conversion</p>
+              <p className="mt-1 text-2xl font-semibold text-green-600">{stats.marketing.conversionRate}%</p>
             </div>
             <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Active Campaigns</p>
-              <p className="mt-2 text-3xl font-semibold text-blue-600">{stats.marketing.activeCampaigns}</p>
+              <p className="text-sm font-medium text-gray-600">Campaigns</p>
+              <p className="mt-1 text-2xl font-semibold text-blue-600">{stats.marketing.activeCampaigns}</p>
             </div>
           </div>
-          <div className="mt-4">
-            <Link href="/marketing" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-              View CRM dashboard →
-            </Link>
+          {/* Charts */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Lead Distribution</h4>
+              <DashboardCharts 
+                type="leadStatus" 
+                data={{ 
+                  hot: stats.marketing.hotLeads, 
+                  warm: stats.marketing.warmLeads,
+                  cold: stats.marketing.coldLeads,
+                  converted: stats.marketing.convertedLeads 
+                }} 
+              />
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Lead Trend (6 months)</h4>
+              <DashboardCharts 
+                type="leadTrend" 
+                data={stats.marketing.leadTrend} 
+              />
+            </div>
           </div>
-        </Card>
+        </div>
+        <div className="mt-4">
+          <Link href="/marketing" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
+            View CRM dashboard →
+          </Link>
+        </div>
+      </Card>
 
-        {/* HR Section */}
-        <Card title="Human Resources">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* HR Section */}
+      <Card title="Human Resources">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Total Employees</p>
-              <p className="mt-2 text-3xl font-semibold text-gray-900">{stats.hr.totalEmployees}</p>
+              <p className="text-sm font-medium text-gray-600">Total</p>
+              <p className="mt-1 text-2xl font-semibold text-gray-900">{stats.hr.totalEmployees}</p>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Active Employees</p>
-              <p className="mt-2 text-3xl font-semibold text-green-600">{stats.hr.activeEmployees}</p>
+              <p className="text-sm font-medium text-gray-600">Active</p>
+              <p className="mt-1 text-2xl font-semibold text-green-600">{stats.hr.activeEmployees}</p>
             </div>
             <div className="text-center p-4 bg-yellow-50 rounded-lg">
               <p className="text-sm font-medium text-gray-600">Pending Leave</p>
-              <p className="mt-2 text-3xl font-semibold text-yellow-600">{stats.hr.pendingLeave}</p>
+              <p className="mt-1 text-2xl font-semibold text-yellow-600">{stats.hr.pendingLeave}</p>
             </div>
             <div className="text-center p-4 bg-red-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Expiring Documents</p>
-              <p className="mt-2 text-3xl font-semibold text-red-600">{stats.hr.expiringDocuments}</p>
+              <p className="text-sm font-medium text-gray-600">Expiring Docs</p>
+              <p className="mt-1 text-2xl font-semibold text-red-600">{stats.hr.expiringDocuments}</p>
             </div>
           </div>
-          <div className="mt-4">
-            <Link href="/hr" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-              View HR dashboard →
-            </Link>
+          {/* Chart */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Employee Status</h4>
+            <DashboardCharts 
+              type="employeeStatus" 
+              data={{ 
+                active: stats.hr.activeEmployees, 
+                inactive: stats.hr.inactiveEmployees 
+              }} 
+            />
           </div>
-        </Card>
+        </div>
+        <div className="mt-4">
+          <Link href="/hr" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
+            View HR dashboard →
+          </Link>
+        </div>
+      </Card>
 
+      {/* Inventory & Facilities Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Inventory Section */}
         <Card title="Inventory">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Low Stock Items</p>
-              <p className="mt-2 text-3xl font-semibold text-red-600">{stats.inventory.lowStockItems}</p>
-            </div>
+          <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <p className="text-sm font-medium text-gray-600">Total Items</p>
-              <p className="mt-2 text-3xl font-semibold text-blue-600">{stats.inventory.totalItems}</p>
+              <p className="mt-1 text-2xl font-semibold text-blue-600">{stats.inventory.totalItems}</p>
             </div>
+            <div className="text-center p-4 bg-red-50 rounded-lg">
+              <p className="text-sm font-medium text-gray-600">Low Stock</p>
+              <p className="mt-1 text-2xl font-semibold text-red-600">{stats.inventory.lowStockItems}</p>
+            </div>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Stock Levels</h4>
+            <DashboardCharts 
+              type="inventory" 
+              data={{ 
+                inStock: stats.inventory.inStockItems, 
+                lowStock: stats.inventory.lowStockItems,
+                outOfStock: stats.inventory.outOfStockItems 
+              }} 
+            />
           </div>
           <div className="mt-4">
             <Link href="/inventory" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-              View inventory dashboard →
+              View inventory →
             </Link>
           </div>
         </Card>
 
         {/* Facilities Section */}
         <Card title="Facilities">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Open Maintenance</p>
-              <p className="mt-2 text-3xl font-semibold text-yellow-600">{stats.facilities.openMaintenance}</p>
+              <p className="text-sm font-medium text-gray-600">Open Tickets</p>
+              <p className="mt-1 text-2xl font-semibold text-yellow-600">{stats.facilities.openMaintenance}</p>
             </div>
             <div className="text-center p-4 bg-red-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Overdue Tickets</p>
-              <p className="mt-2 text-3xl font-semibold text-red-600">{stats.facilities.overdueTickets}</p>
+              <p className="text-sm font-medium text-gray-600">Overdue</p>
+              <p className="mt-1 text-2xl font-semibold text-red-600">{stats.facilities.overdueTickets}</p>
             </div>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Maintenance Status</h4>
+            <DashboardCharts 
+              type="maintenance" 
+              data={{ 
+                pending: stats.facilities.pendingMaintenance, 
+                inProgress: stats.facilities.inProgressMaintenance,
+                completed: stats.facilities.completedMaintenance,
+                overdue: stats.facilities.overdueTickets 
+              }} 
+            />
           </div>
           <div className="mt-4">
             <Link href="/facilities" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-              View facilities dashboard →
+              View facilities →
             </Link>
           </div>
         </Card>
+      </div>
 
+      {/* Purchasing & System Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Purchasing Section */}
         <Card title="Purchasing">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="text-center p-4 bg-yellow-50 rounded-lg">
               <p className="text-sm font-medium text-gray-600">Open PRs</p>
-              <p className="mt-2 text-3xl font-semibold text-yellow-600">{stats.purchasing.openPRs}</p>
+              <p className="mt-1 text-2xl font-semibold text-yellow-600">{stats.purchasing.openPRs}</p>
             </div>
             <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
-              <p className="mt-2 text-3xl font-semibold text-blue-600">{stats.purchasing.pendingApprovals}</p>
+              <p className="text-sm font-medium text-gray-600">Pending</p>
+              <p className="mt-1 text-2xl font-semibold text-blue-600">{stats.purchasing.pendingApprovals}</p>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Recent POs (30d)</p>
-              <p className="mt-2 text-3xl font-semibold text-green-600">{stats.purchasing.recentPOs}</p>
+              <p className="text-sm font-medium text-gray-600">Recent POs</p>
+              <p className="mt-1 text-2xl font-semibold text-green-600">{stats.purchasing.recentPOs}</p>
             </div>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">PO Trend (6 months)</h4>
+            <DashboardCharts 
+              type="poTrend" 
+              data={stats.purchasing.poTrend} 
+            />
           </div>
           <div className="mt-4">
             <Link href="/purchasing" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-              View procurement dashboard →
+              View procurement →
             </Link>
           </div>
         </Card>
 
         {/* System Administration Section */}
         <Card title="System Administration">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <p className="text-sm font-medium text-gray-600">Total Users</p>
-              <p className="mt-2 text-3xl font-semibold text-gray-900">{stats.system.totalUsers}</p>
+              <p className="mt-1 text-2xl font-semibold text-gray-900">{stats.system.totalUsers}</p>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <p className="text-sm font-medium text-gray-600">Active Users</p>
-              <p className="mt-2 text-3xl font-semibold text-green-600">{stats.system.activeUsers}</p>
+              <p className="mt-1 text-2xl font-semibold text-green-600">{stats.system.activeUsers}</p>
             </div>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">User Activity</h4>
+            <DashboardCharts 
+              type="users" 
+              data={{ 
+                active: stats.system.activeUsers, 
+                inactive: stats.system.inactiveUsers 
+              }} 
+            />
           </div>
           <div className="mt-4">
             <Link href="/admin" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
@@ -520,5 +785,6 @@ export default async function DashboardPage() {
           </div>
         </Card>
       </div>
+    </div>
   )
 }
