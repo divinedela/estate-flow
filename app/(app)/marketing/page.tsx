@@ -32,6 +32,7 @@ interface Lead {
   contact_id: string | null
   contact: Contact | null
   status: string
+  temperature: string | null
   lead_source: string | null
   priority: string | null
   interest_type: string | null
@@ -136,9 +137,11 @@ async function getMarketingStats() {
   const leads = (allLeads || []) as Lead[]
   const totalLeads = leads.length
   const newLeadsThisWeek = leads.filter(l => new Date(l.created_at) >= oneWeekAgo).length
-  const hotLeads = leads.filter(l => l.status === 'hot').length
-  const warmLeads = leads.filter(l => l.status === 'warm').length
-  const coldLeads = leads.filter(l => l.status === 'cold').length
+  // Temperature-based counts (using temperature field, fallback to status for backwards compatibility)
+  const hotLeads = leads.filter(l => l.temperature === 'hot' || (!l.temperature && l.status === 'hot')).length
+  const warmLeads = leads.filter(l => l.temperature === 'warm' || (!l.temperature && l.status === 'warm')).length
+  const coldLeads = leads.filter(l => l.temperature === 'cold' || (!l.temperature && l.status === 'cold')).length
+  // Stage-based counts
   const convertedLeads = leads.filter(l => l.status === 'converted').length
   const recentLeads = leads.slice(0, 5)
 
@@ -586,45 +589,97 @@ export default async function MarketingPage() {
             <Card>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Lead Pipeline</h3>
+                <span className="text-sm text-gray-500">{stats.totalLeads} total</span>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-3">
+                {/* Hot Leads */}
                 <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="p-2 bg-red-100 rounded-full">
                       <FireIcon className="h-5 w-5 text-red-600" />
                     </div>
-                    <span className="text-gray-700">Hot</span>
+                    <div>
+                      <span className="text-gray-700 font-medium">Hot</span>
+                      <p className="text-xs text-gray-500">Ready to convert</p>
+                    </div>
                   </div>
                   <span className="text-2xl font-bold text-red-600">{stats.hotLeads}</span>
                 </div>
+                
+                {/* Warm Leads */}
                 <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="p-2 bg-orange-100 rounded-full">
                       <ClockIcon className="h-5 w-5 text-orange-600" />
                     </div>
-                    <span className="text-gray-700">Warm</span>
+                    <div>
+                      <span className="text-gray-700 font-medium">Warm</span>
+                      <p className="text-xs text-gray-500">Interested</p>
+                    </div>
                   </div>
                   <span className="text-2xl font-bold text-orange-600">{stats.warmLeads}</span>
                 </div>
+                
+                {/* Cold Leads */}
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="p-2 bg-blue-100 rounded-full">
                       <UsersIcon className="h-5 w-5 text-blue-600" />
                     </div>
-                    <span className="text-gray-700">Cold</span>
+                    <div>
+                      <span className="text-gray-700 font-medium">Cold</span>
+                      <p className="text-xs text-gray-500">Needs nurturing</p>
+                    </div>
                   </div>
                   <span className="text-2xl font-bold text-blue-600">{stats.coldLeads}</span>
                 </div>
+                
+                {/* Converted Leads */}
                 <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="p-2 bg-emerald-100 rounded-full">
                       <CheckCircleIcon className="h-5 w-5 text-emerald-600" />
                     </div>
-                    <span className="text-gray-700">Converted</span>
+                    <div>
+                      <span className="text-gray-700 font-medium">Converted</span>
+                      <p className="text-xs text-gray-500">Won deals</p>
+                    </div>
                   </div>
                   <span className="text-2xl font-bold text-emerald-600">{stats.convertedLeads}</span>
                 </div>
               </div>
+              
+              {/* Progress bar showing pipeline distribution */}
+              {stats.totalLeads > 0 && (
+                <div className="mt-4">
+                  <div className="flex h-2 rounded-full overflow-hidden bg-gray-200">
+                    {stats.hotLeads > 0 && (
+                      <div 
+                        className="bg-red-500" 
+                        style={{ width: `${(stats.hotLeads / stats.totalLeads) * 100}%` }}
+                      />
+                    )}
+                    {stats.warmLeads > 0 && (
+                      <div 
+                        className="bg-orange-500" 
+                        style={{ width: `${(stats.warmLeads / stats.totalLeads) * 100}%` }}
+                      />
+                    )}
+                    {stats.coldLeads > 0 && (
+                      <div 
+                        className="bg-blue-500" 
+                        style={{ width: `${(stats.coldLeads / stats.totalLeads) * 100}%` }}
+                      />
+                    )}
+                    {stats.convertedLeads > 0 && (
+                      <div 
+                        className="bg-emerald-500" 
+                        style={{ width: `${(stats.convertedLeads / stats.totalLeads) * 100}%` }}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
             </Card>
           </div>
         </div>

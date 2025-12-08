@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   HomeIcon,
   UserGroupIcon,
@@ -14,8 +14,10 @@ import {
   Cog6ToothIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline'
 import { useUser } from '@/lib/contexts/user-context'
+import { createClient } from '@/lib/supabase/client'
 
 interface NavItem {
   name: string
@@ -162,9 +164,17 @@ const NavItemComponent = memo(function NavItemComponent({
 
 export const Sidebar = memo(function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { loading } = useUser()
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const initializedRef = useRef(false)
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
 
   // Initialize expanded sections on mount only
   useEffect(() => {
@@ -240,7 +250,7 @@ export const Sidebar = memo(function Sidebar() {
   }
 
   return (
-    <div className="flex flex-col w-64 bg-gray-900 text-white">
+    <div className="flex flex-col w-64 bg-gray-900 text-white h-screen">
       <div className="flex items-center h-16 px-6 border-b border-gray-800">
         <h1 className="text-xl font-bold">Estate Flow</h1>
       </div>
@@ -262,6 +272,17 @@ export const Sidebar = memo(function Sidebar() {
           )
         })}
       </nav>
+      
+      {/* Sign Out Button at Bottom */}
+      <div className="border-t border-gray-800 p-4">
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-300 hover:text-white"
+        >
+          <ArrowRightOnRectangleIcon className="h-5 w-5" />
+          <span className="text-sm font-medium">Sign Out</span>
+        </button>
+      </div>
     </div>
   )
 })

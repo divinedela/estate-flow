@@ -59,6 +59,7 @@ async function getLeadStats() {
       all: 0,
       new: 0,
       contacted: 0,
+      qualified: 0,
       hot: 0,
       warm: 0,
       cold: 0,
@@ -78,6 +79,7 @@ async function getLeadStats() {
       all: 0,
       new: 0,
       contacted: 0,
+      qualified: 0,
       hot: 0,
       warm: 0,
       cold: 0,
@@ -87,56 +89,34 @@ async function getLeadStats() {
 
   const orgId = profile.organization_id
 
-  // Fetch counts by status
-  const { count: all } = await supabase
+  // Fetch all leads to calculate stats
+  const { data: allLeads } = await supabase
     .from('leads')
-    .select('*', { count: 'exact', head: true })
+    .select('status, temperature')
     .eq('organization_id', orgId)
 
-  const { count: newLeads } = await supabase
-    .from('leads')
-    .select('*', { count: 'exact', head: true })
-    .eq('organization_id', orgId)
-    .eq('status', 'new')
-
-  const { count: contacted } = await supabase
-    .from('leads')
-    .select('*', { count: 'exact', head: true })
-    .eq('organization_id', orgId)
-    .eq('status', 'contacted')
-
-  const { count: hot } = await supabase
-    .from('leads')
-    .select('*', { count: 'exact', head: true })
-    .eq('organization_id', orgId)
-    .eq('status', 'hot')
-
-  const { count: warm } = await supabase
-    .from('leads')
-    .select('*', { count: 'exact', head: true })
-    .eq('organization_id', orgId)
-    .eq('status', 'warm')
-
-  const { count: cold } = await supabase
-    .from('leads')
-    .select('*', { count: 'exact', head: true })
-    .eq('organization_id', orgId)
-    .eq('status', 'cold')
-
-  const { count: converted } = await supabase
-    .from('leads')
-    .select('*', { count: 'exact', head: true })
-    .eq('organization_id', orgId)
-    .eq('status', 'converted')
+  const leads = allLeads || []
+  
+  // Stage counts
+  const newLeads = leads.filter(l => l.status === 'new').length
+  const contacted = leads.filter(l => l.status === 'contacted').length
+  const qualified = leads.filter(l => l.status === 'qualified').length
+  const converted = leads.filter(l => l.status === 'converted').length
+  
+  // Temperature counts (using temperature field, fallback to status for backwards compatibility)
+  const hot = leads.filter(l => l.temperature === 'hot' || (!l.temperature && l.status === 'hot')).length
+  const warm = leads.filter(l => l.temperature === 'warm' || (!l.temperature && l.status === 'warm')).length
+  const cold = leads.filter(l => l.temperature === 'cold' || (!l.temperature && l.status === 'cold')).length
 
   return {
-    all: all || 0,
-    new: newLeads || 0,
-    contacted: contacted || 0,
-    hot: hot || 0,
-    warm: warm || 0,
-    cold: cold || 0,
-    converted: converted || 0,
+    all: leads.length,
+    new: newLeads,
+    contacted,
+    qualified,
+    hot,
+    warm,
+    cold,
+    converted,
   }
 }
 
@@ -144,15 +124,19 @@ export default async function LeadsPage() {
   const leads = await getLeads()
   const stats = await getLeadStats()
 
-  const statusColors: Record<string, string> = {
+  const stageColors: Record<string, string> = {
     new: 'bg-blue-100 text-blue-800',
     contacted: 'bg-yellow-100 text-yellow-800',
     qualified: 'bg-purple-100 text-purple-800',
-    hot: 'bg-red-100 text-red-800',
-    warm: 'bg-orange-100 text-orange-800',
-    cold: 'bg-gray-100 text-gray-800',
+    negotiating: 'bg-indigo-100 text-indigo-800',
     converted: 'bg-green-100 text-green-800',
     lost: 'bg-red-100 text-red-800',
+  }
+
+  const temperatureConfig: Record<string, { bg: string; icon: string }> = {
+    hot: { bg: 'bg-red-100 text-red-700', icon: '🔥' },
+    warm: { bg: 'bg-orange-100 text-orange-700', icon: '☀️' },
+    cold: { bg: 'bg-blue-100 text-blue-700', icon: '❄️' },
   }
 
   const priorityColors: Record<string, string> = {
@@ -194,31 +178,49 @@ export default async function LeadsPage() {
             </Link>
           </div>
 
-          <div className="flex space-x-2 overflow-x-auto pb-2">
-            <Button variant="secondary" className="whitespace-nowrap">All ({stats.all})</Button>
-            <Button variant="secondary" className="whitespace-nowrap">New ({stats.new})</Button>
-            <Button variant="secondary" className="whitespace-nowrap">Contacted ({stats.contacted})</Button>
-            <Button variant="secondary" className="whitespace-nowrap">Hot ({stats.hot})</Button>
-            <Button variant="secondary" className="whitespace-nowrap">Warm ({stats.warm})</Button>
-            <Button variant="secondary" className="whitespace-nowrap">Cold ({stats.cold})</Button>
-            <Button variant="secondary" className="whitespace-nowrap">Converted ({stats.converted})</Button>
+          {/* Stage Filters */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">By Stage</p>
+            <div className="flex space-x-2 overflow-x-auto pb-2">
+              <Button variant="secondary" className="whitespace-nowrap">All ({stats.all})</Button>
+              <Button variant="secondary" className="whitespace-nowrap">🆕 New ({stats.new})</Button>
+              <Button variant="secondary" className="whitespace-nowrap">📞 Contacted ({stats.contacted})</Button>
+              <Button variant="secondary" className="whitespace-nowrap">✅ Qualified ({stats.qualified})</Button>
+              <Button variant="secondary" className="whitespace-nowrap">🎉 Converted ({stats.converted})</Button>
+            </div>
+          </div>
+          
+          {/* Temperature Filters */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">By Temperature</p>
+            <div className="flex space-x-2 overflow-x-auto pb-2">
+              <Button variant="secondary" className="whitespace-nowrap bg-red-50 hover:bg-red-100 border-red-200">🔥 Hot ({stats.hot})</Button>
+              <Button variant="secondary" className="whitespace-nowrap bg-orange-50 hover:bg-orange-100 border-orange-200">☀️ Warm ({stats.warm})</Button>
+              <Button variant="secondary" className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200">❄️ Cold ({stats.cold})</Button>
+            </div>
           </div>
 
           <Card>
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center gap-3">
               <input
                 type="text"
                 placeholder="Search leads..."
                 className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <select className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">All Status</option>
-                <option value="new">New</option>
-                <option value="contacted">Contacted</option>
-                <option value="hot">Hot</option>
-                <option value="warm">Warm</option>
-                <option value="cold">Cold</option>
-                <option value="converted">Converted</option>
+                <option value="">All Stages</option>
+                <option value="new">🆕 New</option>
+                <option value="contacted">📞 Contacted</option>
+                <option value="qualified">✅ Qualified</option>
+                <option value="negotiating">🤝 Negotiating</option>
+                <option value="converted">🎉 Converted</option>
+                <option value="lost">❌ Lost</option>
+              </select>
+              <select className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">All Temperatures</option>
+                <option value="hot">🔥 Hot</option>
+                <option value="warm">☀️ Warm</option>
+                <option value="cold">❄️ Cold</option>
               </select>
             </div>
 
@@ -228,7 +230,8 @@ export default async function LeadsPage() {
                   <TableHeader>Name</TableHeader>
                   <TableHeader>Contact</TableHeader>
                   <TableHeader>Source</TableHeader>
-                  <TableHeader>Status</TableHeader>
+                  <TableHeader>Stage</TableHeader>
+                  <TableHeader>Temperature</TableHeader>
                   <TableHeader>Priority</TableHeader>
                   <TableHeader>Next Follow-up</TableHeader>
                   <TableHeader>Actions</TableHeader>
@@ -237,7 +240,7 @@ export default async function LeadsPage() {
               <TableBody>
                 {leads.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={8} className="text-center text-gray-500 py-8">
                       No leads found. <Link href="/marketing/leads/new" className="text-indigo-600 hover:text-indigo-500">Add your first lead</Link>
                     </TableCell>
                   </TableRow>
@@ -251,6 +254,10 @@ export default async function LeadsPage() {
                     const contactInfo = contact 
                       ? contact.email || contact.phone || ''
                       : ''
+                    
+                    // Get temperature (use temperature field, fallback to status for backwards compatibility)
+                    const temp = lead.temperature || (['hot', 'warm', 'cold'].includes(lead.status) ? lead.status : 'warm')
+                    const tempConfig = temperatureConfig[temp] || temperatureConfig.warm
 
                     return (
                       <TableRow key={lead.id}>
@@ -265,10 +272,15 @@ export default async function LeadsPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="capitalize">{lead.lead_source || 'N/A'}</TableCell>
+                        <TableCell className="capitalize">{(lead.lead_source || 'direct').replace(/_/g, ' ')}</TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[lead.status || 'new'] || statusColors.new}`}>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${stageColors[lead.status || 'new'] || stageColors.new}`}>
                             {lead.status || 'new'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${tempConfig.bg}`}>
+                            {tempConfig.icon} {temp}
                           </span>
                         </TableCell>
                         <TableCell>

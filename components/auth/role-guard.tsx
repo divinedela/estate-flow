@@ -4,7 +4,7 @@ import { useUser } from "@/lib/contexts/user-context";
 
 interface RoleGuardProps {
   children: React.ReactNode;
-  allowedRoles: string[];
+  allowedRoles?: string[]; // Made optional - if not provided, allows all authenticated users
   fallback?: React.ReactNode;
 }
 
@@ -13,7 +13,7 @@ export function RoleGuard({
   allowedRoles,
   fallback,
 }: RoleGuardProps) {
-  const { roles, loading } = useUser();
+  const { roles, loading, authUser, profile } = useUser();
 
   if (loading) {
     return (
@@ -21,6 +21,22 @@ export function RoleGuard({
         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
       </div>
     );
+  }
+
+  // If no user is authenticated, deny access
+  if (!authUser || !profile) {
+    return (
+      fallback || (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-800">You must be logged in to access this resource.</p>
+        </div>
+      )
+    );
+  }
+
+  // If allowedRoles is not provided, allow all authenticated users
+  if (!allowedRoles || allowedRoles.length === 0) {
+    return <>{children}</>;
   }
 
   // Debug logging

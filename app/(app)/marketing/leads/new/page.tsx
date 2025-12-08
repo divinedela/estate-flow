@@ -38,6 +38,7 @@ export default function NewLeadPage() {
     assigned_to: '',
     lead_source: 'website',
     status: 'new',
+    temperature: 'warm',
     priority: 'medium',
     interest_type: 'buy',
     budget_min: '',
@@ -157,6 +158,7 @@ export default function NewLeadPage() {
         assigned_to: formData.assigned_to || null,
         lead_source: formData.lead_source,
         status: formData.status,
+        temperature: formData.temperature,
         priority: formData.priority,
         interest_type: formData.interest_type || null,
         budget_min: formData.budget_min ? parseFloat(formData.budget_min) : null,
@@ -292,34 +294,95 @@ export default function NewLeadPage() {
                       { value: 'walk_in', label: 'Walk-in' },
                       { value: 'campaign', label: 'Campaign' },
                       { value: 'social_media', label: 'Social Media' },
-                      { value: 'phone', label: 'Phone' },
-                      { value: 'email', label: 'Email' },
+                      { value: 'phone', label: 'Phone Inquiry' },
+                      { value: 'email', label: 'Email Inquiry' },
+                      { value: 'agent', label: 'Agent/Broker' },
+                      { value: 'event', label: 'Event/Exhibition' },
                       { value: 'other', label: 'Other' },
                     ]}
                   />
                   <FormSelect
-                    label="Status"
+                    label="Stage"
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     options={[
-                      { value: 'new', label: 'New' },
-                      { value: 'contacted', label: 'Contacted' },
-                      { value: 'qualified', label: 'Qualified' },
-                      { value: 'hot', label: 'Hot' },
-                      { value: 'warm', label: 'Warm' },
-                      { value: 'cold', label: 'Cold' },
-                      { value: 'converted', label: 'Converted' },
-                      { value: 'lost', label: 'Lost' },
+                      { value: 'new', label: '🆕 New - Just entered' },
+                      { value: 'contacted', label: '📞 Contacted - Initial outreach done' },
+                      { value: 'qualified', label: '✅ Qualified - Meets criteria' },
+                      { value: 'negotiating', label: '🤝 Negotiating - In discussions' },
+                      { value: 'converted', label: '🎉 Converted - Deal closed' },
+                      { value: 'lost', label: '❌ Lost - Did not convert' },
                     ]}
                   />
+                  
+                  {/* Temperature Selection with Visual Cards */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Lead Temperature <span className="text-gray-400">(How likely to convert?)</span>
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, temperature: 'hot' })}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          formData.temperature === 'hot'
+                            ? 'border-red-500 bg-red-50 ring-2 ring-red-200'
+                            : 'border-gray-200 hover:border-red-300 hover:bg-red-50'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <span className="text-2xl">🔥</span>
+                          <p className={`font-semibold mt-1 ${formData.temperature === 'hot' ? 'text-red-700' : 'text-gray-700'}`}>
+                            Hot
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">Ready to buy</p>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, temperature: 'warm' })}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          formData.temperature === 'warm'
+                            ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200'
+                            : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <span className="text-2xl">☀️</span>
+                          <p className={`font-semibold mt-1 ${formData.temperature === 'warm' ? 'text-orange-700' : 'text-gray-700'}`}>
+                            Warm
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">Interested</p>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, temperature: 'cold' })}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          formData.temperature === 'cold'
+                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <span className="text-2xl">❄️</span>
+                          <p className={`font-semibold mt-1 ${formData.temperature === 'cold' ? 'text-blue-700' : 'text-gray-700'}`}>
+                            Cold
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">Needs nurturing</p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
                   <FormSelect
                     label="Priority"
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                     options={[
-                      { value: 'low', label: 'Low' },
-                      { value: 'medium', label: 'Medium' },
-                      { value: 'high', label: 'High' },
+                      { value: 'low', label: 'Low Priority' },
+                      { value: 'medium', label: 'Medium Priority' },
+                      { value: 'high', label: 'High Priority' },
                     ]}
                   />
                   <FormSelect
@@ -327,9 +390,9 @@ export default function NewLeadPage() {
                     value={formData.interest_type}
                     onChange={(e) => setFormData({ ...formData, interest_type: e.target.value })}
                     options={[
-                      { value: 'buy', label: 'Buy' },
-                      { value: 'rent', label: 'Rent' },
-                      { value: 'invest', label: 'Invest' },
+                      { value: 'buy', label: '🏠 Buy Property' },
+                      { value: 'rent', label: '🔑 Rent Property' },
+                      { value: 'invest', label: '💰 Investment' },
                     ]}
                   />
                   <FormSelect
