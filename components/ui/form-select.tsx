@@ -1,13 +1,14 @@
-import { SelectHTMLAttributes, LabelHTMLAttributes } from 'react'
+import { SelectHTMLAttributes, LabelHTMLAttributes, ReactNode } from 'react'
 
 interface FormSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string
   error?: string
-  options: { value: string; label: string }[]
+  options?: { value: string; label: string }[]
   labelProps?: LabelHTMLAttributes<HTMLLabelElement>
+  children?: ReactNode
 }
 
-export function FormSelect({ label, error, labelProps, options, className = '', ...props }: FormSelectProps) {
+export function FormSelect({ label, error, labelProps, options, className = '', children, ...props }: FormSelectProps) {
   return (
     <div>
       {label && (
@@ -25,7 +26,7 @@ export function FormSelect({ label, error, labelProps, options, className = '', 
         } ${className}`}
         {...props}
       >
-        {options.map((option) => (
+        {children ? children : options?.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>

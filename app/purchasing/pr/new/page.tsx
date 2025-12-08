@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { MainLayout } from '@/components/layout/main-layout'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/ui/form-input'
@@ -250,8 +249,7 @@ export default function NewPRPage() {
   }
 
   return (
-    <MainLayout>
-      <RoleGuard allowedRoles={['super_admin', 'procurement_officer']}>
+    <RoleGuard allowedRoles={['super_admin', 'procurement_officer']}>
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Create Purchase Requisition</h1>
@@ -459,7 +457,6 @@ export default function NewPRPage() {
           </Card>
         </div>
       </RoleGuard>
-    </MainLayout>
   )
 }
 

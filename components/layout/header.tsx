@@ -1,11 +1,11 @@
 'use client'
 
-import { useUserProfile } from '@/lib/hooks/use-user-profile'
+import { useUser } from '@/lib/contexts/user-context'
 import { LogoutButton } from '@/components/auth/logout-button'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 
 export function Header() {
-  const { profile } = useUserProfile()
+  const { profile } = useUser()
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">

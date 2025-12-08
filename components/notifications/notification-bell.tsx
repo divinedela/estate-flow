@@ -1,50 +1,38 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BellIcon } from "@heroicons/react/24/outline";
 import { createClient } from "@/lib/supabase/client";
 import { Database } from "@/types/database";
+import { useUser } from "@/lib/contexts/user-context";
 
 type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 
 export function NotificationBell() {
+  const { profile } = useUser();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchNotifications() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  const fetchNotifications = useCallback(async () => {
+    if (!profile?.id) return;
 
-      if (!user) return;
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", profile.id)
+      .is("read_at", null)
+      .order("created_at", { ascending: false })
+      .limit(10);
 
-      const { data: profile } = await supabase
-        .from("app_users")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!profile || !("id" in profile)) return;
-
-      const profileId = (profile as { id: string }).id;
-
-      const { data } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("user_id", profileId)
-        .is("read_at", null)
-        .order("created_at", { ascending: false })
-        .limit(10);
-
-      if (data) {
-        setNotifications(data);
-        setUnreadCount(data.length);
-      }
+    if (data) {
+      setNotifications(data);
+      setUnreadCount(data.length);
     }
+  }, [profile?.id]);
 
+  useEffect(() => {
     fetchNotifications();
 
     // Set up realtime subscription
@@ -67,7 +55,7 @@ export function NotificationBell() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchNotifications]);
 
   const markAsRead = async (notificationId: string) => {
     const supabase = createClient();

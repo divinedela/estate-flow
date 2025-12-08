@@ -1,4 +1,3 @@
-import { MainLayout } from '@/components/layout/main-layout'
 import { Card } from '@/components/ui/card'
 import { RoleGuard } from '@/components/auth/role-guard'
 import Link from 'next/link'
@@ -6,8 +5,7 @@ import { Button } from '@/components/ui/button'
 
 export default function AdminPage() {
   return (
-    <MainLayout>
-      <RoleGuard allowedRoles={['super_admin', 'hr_manager']}>
+    <RoleGuard allowedRoles={['super_admin', 'hr_manager']}>
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Admin Settings</h1>
@@ -49,7 +47,6 @@ export default function AdminPage() {
           </div>
         </div>
       </RoleGuard>
-    </MainLayout>
   )
 }
 

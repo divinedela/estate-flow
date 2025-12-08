@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { MainLayout } from '@/components/layout/main-layout'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/ui/form-input'
@@ -11,6 +10,8 @@ import { FormTextarea } from '@/components/ui/form-textarea'
 import { RoleGuard } from '@/components/auth/role-guard'
 import { createClient } from '@/lib/supabase/client'
 import { Database } from '@/types/database'
+import Link from 'next/link'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 type AppUser = Database['public']['Tables']['app_users']['Row']
 
@@ -120,14 +121,20 @@ export default function NewProjectPage() {
   }
 
   return (
-    <MainLayout>
-      <RoleGuard allowedRoles={['super_admin', 'project_manager']}>
+    <RoleGuard allowedRoles={['super_admin', 'project_manager']}>
         <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Create New Project</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Enter project information to get started
-            </p>
+          <div className="flex items-center space-x-4">
+            <Link href="/projects">
+              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+              </button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Create New Project</h1>
+              <p className="mt-1 text-sm text-gray-500">
+                Enter project information to get started
+              </p>
+            </div>
           </div>
 
           <Card>
@@ -273,7 +280,6 @@ export default function NewProjectPage() {
           </Card>
         </div>
       </RoleGuard>
-    </MainLayout>
   )
 }
 

@@ -14,24 +14,8 @@ import {
   Cog6ToothIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  UserIcon,
-  CalendarIcon,
-  ClockIcon,
-  DocumentTextIcon,
-  FireIcon,
-  PhoneIcon,
-  BuildingStorefrontIcon,
-  PresentationChartLineIcon,
-  ClipboardDocumentListIcon,
-  WrenchScrewdriverIcon,
-  TruckIcon,
-  ReceiptPercentIcon,
-  UsersIcon,
-  ShieldCheckIcon,
-  BuildingLibraryIcon,
-  ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline'
-import { useUserProfile } from '@/lib/hooks/use-user-profile'
+import { useUser } from '@/lib/contexts/user-context'
 
 interface NavItem {
   name: string
@@ -50,85 +34,36 @@ const navigation: NavItem[] = [
     name: 'HR',
     href: '/hr',
     icon: UserGroupIcon,
-    subItems: [
-      { name: 'HR Dashboard', href: '/hr', icon: HomeIcon },
-      { name: 'Employees', href: '/hr/employees', icon: UserIcon },
-      { name: 'Leave Management', href: '/hr/leave', icon: CalendarIcon },
-      { name: 'Attendance', href: '/hr/attendance', icon: ClockIcon },
-      { name: 'Documents', href: '/hr/documents', icon: DocumentTextIcon },
-    ],
   },
   {
     name: 'Marketing / CRM',
     href: '/marketing',
     icon: MegaphoneIcon,
-    subItems: [
-      { name: 'CRM Dashboard', href: '/marketing', icon: HomeIcon },
-      { name: 'Leads', href: '/marketing/leads', icon: FireIcon },
-      { name: 'Contacts', href: '/marketing/contacts', icon: PhoneIcon },
-      { name: 'Properties', href: '/marketing/properties', icon: BuildingStorefrontIcon },
-      { name: 'Campaigns', href: '/marketing/campaigns', icon: PresentationChartLineIcon },
-    ],
   },
   {
     name: 'Projects',
     href: '/projects',
     icon: FolderIcon,
-    subItems: [
-      { name: 'All Projects', href: '/projects', icon: FolderIcon },
-      { name: 'Tasks', href: '/projects/tasks', icon: ClipboardDocumentListIcon },
-    ],
   },
   {
     name: 'Inventory',
     href: '/inventory',
     icon: CubeIcon,
-    subItems: [
-      { name: 'Inventory Dashboard', href: '/inventory', icon: HomeIcon },
-      { name: 'Items', href: '/inventory/items', icon: CubeIcon },
-      { name: 'Transactions', href: '/inventory/transactions', icon: ReceiptPercentIcon },
-      { name: 'Locations', href: '/inventory/locations', icon: BuildingLibraryIcon },
-      { name: 'Reorder Rules', href: '/inventory/reorder-rules', icon: ClipboardDocumentCheckIcon },
-    ],
   },
   {
     name: 'Facilities',
     href: '/facilities',
     icon: BuildingOfficeIcon,
-    subItems: [
-      { name: 'Facilities Dashboard', href: '/facilities', icon: HomeIcon },
-      { name: 'Maintenance Requests', href: '/facilities/maintenance', icon: WrenchScrewdriverIcon },
-      { name: 'Work Orders', href: '/facilities/work-orders', icon: ClipboardDocumentListIcon },
-      { name: 'Assets', href: '/facilities/assets', icon: BuildingOfficeIcon },
-      { name: 'Units', href: '/facilities/units', icon: BuildingStorefrontIcon },
-      { name: 'Preventive Maintenance', href: '/facilities/preventive', icon: CalendarIcon },
-    ],
   },
   {
     name: 'Purchasing',
     href: '/purchasing',
     icon: ShoppingCartIcon,
-    subItems: [
-      { name: 'Procurement Dashboard', href: '/purchasing', icon: HomeIcon },
-      { name: 'Purchase Requisitions', href: '/purchasing/prs', icon: DocumentTextIcon },
-      { name: 'Purchase Orders', href: '/purchasing/pos', icon: ReceiptPercentIcon },
-      { name: 'Suppliers', href: '/purchasing/suppliers', icon: TruckIcon },
-      { name: 'Goods Receipts', href: '/purchasing/grns', icon: ClipboardDocumentCheckIcon },
-      { name: 'Invoices', href: '/purchasing/invoices', icon: ReceiptPercentIcon },
-    ],
   },
   {
     name: 'Admin',
     href: '/admin',
     icon: Cog6ToothIcon,
-    subItems: [
-      { name: 'Admin Dashboard', href: '/admin', icon: HomeIcon },
-      { name: 'Users', href: '/admin/users', icon: UsersIcon },
-      { name: 'Roles', href: '/admin/roles', icon: ShieldCheckIcon },
-      { name: 'Organizations', href: '/admin/organizations', icon: BuildingLibraryIcon },
-      { name: 'Audit Logs', href: '/admin/audit-logs', icon: ClipboardDocumentCheckIcon },
-      { name: 'System Settings', href: '/admin/settings', icon: Cog6ToothIcon },
-    ],
   },
 ]
 
@@ -227,19 +162,9 @@ const NavItemComponent = memo(function NavItemComponent({
 
 export const Sidebar = memo(function Sidebar() {
   const pathname = usePathname()
-  const { isSuperAdmin, loading } = useUserProfile()
+  const { loading } = useUser()
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const initializedRef = useRef(false)
-  const userProfileLoadedRef = useRef(false)
-  const isSuperAdminValueRef = useRef<boolean>(false)
-
-  // Cache user profile result once loaded
-  useEffect(() => {
-    if (!loading && !userProfileLoadedRef.current) {
-      isSuperAdminValueRef.current = isSuperAdmin()
-      userProfileLoadedRef.current = true
-    }
-  }, [loading, isSuperAdmin])
 
   // Initialize expanded sections on mount only
   useEffect(() => {
@@ -322,8 +247,8 @@ export const Sidebar = memo(function Sidebar() {
       <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
         {visibleNavigation.map((item) => {
           const hasSubItems = item.subItems && item.subItems.length > 0
-          const isExpanded = hasSubItems && effectiveExpanded.has(item.name)
-          const isActive = isItemActive(item.href) || (hasSubItems && isExpanded)
+          const isExpanded = !!(hasSubItems && effectiveExpanded.has(item.name))
+          const isActive = isItemActive(item.href) || isExpanded
 
           return (
             <NavItemComponent

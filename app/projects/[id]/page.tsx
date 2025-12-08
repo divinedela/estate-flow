@@ -1,10 +1,10 @@
-import { MainLayout } from '@/components/layout/main-layout'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { RoleGuard } from '@/components/auth/role-guard'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 async function getProject(id: string) {
   const supabase = await createClient()
@@ -93,24 +93,21 @@ export default async function ProjectDetailPage({
   const projectManager = project.project_manager as any
 
   return (
-    <MainLayout>
-      <RoleGuard allowedRoles={['super_admin', 'project_manager', 'site_engineer', 'executive']}>
+    <RoleGuard allowedRoles={['super_admin', 'project_manager', 'site_engineer', 'executive']}>
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <Link href="/projects">
-                  <Button variant="secondary" size="sm">
-                    ← Back to Projects
-                  </Button>
-                </Link>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Project Code: {project.project_code}
-                  </p>
-                </div>
+            <div className="flex items-center space-x-4">
+              <Link href="/projects">
+                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+                </button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
+                <p className="mt-1 text-sm text-gray-500">
+                  Project Code: {project.project_code}
+                </p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -309,7 +306,6 @@ export default async function ProjectDetailPage({
           </div>
         </div>
       </RoleGuard>
-    </MainLayout>
   )
 }
 

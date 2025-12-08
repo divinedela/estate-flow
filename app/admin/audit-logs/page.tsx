@@ -1,7 +1,9 @@
-import { MainLayout } from '@/components/layout/main-layout'
 import { Card } from '@/components/ui/card'
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 import { RoleGuard } from '@/components/auth/role-guard'
+import Link from 'next/link'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 async function getAuditLogs() {
   // This would fetch audit logs from the database
@@ -13,14 +15,21 @@ export default async function AuditLogsPage() {
   const logs = await getAuditLogs()
 
   return (
-    <MainLayout>
-      <RoleGuard allowedRoles={['super_admin']}>
+    <RoleGuard allowedRoles={['super_admin']}>
         <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              View system activity and user actions
-            </p>
+          <div className="flex items-center space-x-4">
+            <Link href="/admin">
+              <Button variant="secondary" size="sm">
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
+              <p className="mt-1 text-sm text-gray-500">
+                View system activity and user actions
+              </p>
+            </div>
           </div>
 
           <Card>
@@ -57,7 +66,6 @@ export default async function AuditLogsPage() {
           </Card>
         </div>
       </RoleGuard>
-    </MainLayout>
   )
 }
 

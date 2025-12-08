@@ -1,4 +1,3 @@
-import { MainLayout } from '@/components/layout/main-layout'
 import { Card } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
@@ -348,8 +347,7 @@ export default async function DashboardPage() {
   const stats = await getSuperAdminStats()
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Executive Dashboard</h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -522,6 +520,5 @@ export default async function DashboardPage() {
           </div>
         </Card>
       </div>
-    </MainLayout>
   )
 }

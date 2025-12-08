@@ -1,10 +1,10 @@
-import { MainLayout } from '@/components/layout/main-layout'
 import { Card } from '@/components/ui/card'
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { RoleGuard } from '@/components/auth/role-guard'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 async function getProperties() {
   const supabase = await createClient()
@@ -58,15 +58,21 @@ export default async function PropertiesPage() {
   }
 
   return (
-    <MainLayout>
-      <RoleGuard allowedRoles={['super_admin', 'marketing_officer', 'project_manager']}>
+    <RoleGuard allowedRoles={['super_admin', 'marketing_officer', 'project_manager']}>
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Properties</h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Manage property listings and units
-              </p>
+            <div className="flex items-center space-x-4">
+              <Link href="/marketing" className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                <ArrowLeftIcon className="h-5 w-5" />
+              </Link>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <Link href="/marketing" className="text-sm text-indigo-600 hover:text-indigo-500">Marketing</Link>
+                  <span className="text-gray-400">/</span>
+                  <span className="text-sm text-gray-500">Properties</span>
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900">Properties</h1>
+              </div>
             </div>
             <Link href="/marketing/properties/new">
               <Button>Add Property</Button>
@@ -143,7 +149,6 @@ export default async function PropertiesPage() {
           </Card>
         </div>
       </RoleGuard>
-    </MainLayout>
   )
 }
 

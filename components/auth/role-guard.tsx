@@ -1,6 +1,6 @@
 "use client";
 
-import { useUserProfile } from "@/lib/hooks/use-user-profile";
+import { useUser } from "@/lib/contexts/user-context";
 
 interface RoleGuardProps {
   children: React.ReactNode;
@@ -13,7 +13,7 @@ export function RoleGuard({
   allowedRoles,
   fallback,
 }: RoleGuardProps) {
-  const { roles, loading } = useUserProfile();
+  const { roles, loading } = useUser();
 
   if (loading) {
     return (
@@ -26,18 +26,18 @@ export function RoleGuard({
   // Debug logging
   console.log("[RoleGuard] Checking access:", {
     allowedRoles,
-    userRoles: roles.map((ur) => ur.role.name),
+    userRoles: roles.map((ur) => ur.role?.name),
     rolesCount: roles.length,
   });
 
-  const hasAccess = roles.some((ur) => allowedRoles.includes(ur.role.name));
+  const hasAccess = roles.some((ur) => ur.role && allowedRoles.includes(ur.role.name));
 
   if (!hasAccess) {
     console.warn(
       "[RoleGuard] Access denied. Required:",
       allowedRoles,
       "User has:",
-      roles.map((ur) => ur.role.name)
+      roles.map((ur) => ur.role?.name)
     );
     return (
       fallback || (
@@ -51,7 +51,7 @@ export function RoleGuard({
           <p className="text-red-600 text-sm">
             Your roles:{" "}
             {roles.length > 0
-              ? roles.map((ur) => ur.role.name).join(", ")
+              ? roles.map((ur) => ur.role?.name).join(", ")
               : "None"}
           </p>
         </div>

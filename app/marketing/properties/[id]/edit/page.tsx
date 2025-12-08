@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { MainLayout } from '@/components/layout/main-layout'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/ui/form-input'
@@ -171,8 +170,7 @@ export default function EditPropertyPage() {
 
   if (loading) {
     return (
-      <MainLayout>
-        <RoleGuard allowedRoles={['super_admin', 'marketing_officer', 'project_manager']}>
+      <RoleGuard allowedRoles={['super_admin', 'marketing_officer', 'project_manager']}>
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
@@ -180,13 +178,11 @@ export default function EditPropertyPage() {
             </div>
           </div>
         </RoleGuard>
-      </MainLayout>
     )
   }
 
   return (
-    <MainLayout>
-      <RoleGuard allowedRoles={['super_admin', 'marketing_officer', 'project_manager']}>
+    <RoleGuard allowedRoles={['super_admin', 'marketing_officer', 'project_manager']}>
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Edit Property</h1>
@@ -398,7 +394,6 @@ export default function EditPropertyPage() {
           </Card>
         </div>
       </RoleGuard>
-    </MainLayout>
   )
 }
 

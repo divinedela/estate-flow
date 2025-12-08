@@ -1,4 +1,3 @@
-import { MainLayout } from '@/components/layout/main-layout'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { RoleGuard } from '@/components/auth/role-guard'
@@ -121,8 +120,7 @@ export default async function LeadDetailPage({
     : 'No Contact'
 
   return (
-    <MainLayout>
-      <RoleGuard allowedRoles={['super_admin', 'marketing_officer']}>
+    <RoleGuard allowedRoles={['super_admin', 'marketing_officer']}>
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -334,7 +332,6 @@ export default async function LeadDetailPage({
           </div>
         </div>
       </RoleGuard>
-    </MainLayout>
   )
 }
 
