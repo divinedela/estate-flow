@@ -1,4 +1,3 @@
-import { Card } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
 import { SupabaseClient } from '@supabase/supabase-js'
@@ -341,7 +340,6 @@ async function getInventoryStats(supabase: SupabaseClientType, orgId: string) {
   let inStockItems = 0
 
   if (itemIds.length > 0) {
-    // Check items that have stock levels below reorder point
     const { data: reorderRules } = await supabase
       .from('reorder_rules')
       .select('item_id, reorder_point')
@@ -371,7 +369,6 @@ async function getInventoryStats(supabase: SupabaseClientType, orgId: string) {
       }
     }
 
-    // Items without reorder rules - assume they're in stock
     inStockItems += itemIds.length - itemsWithRules.size
   }
 
@@ -406,7 +403,6 @@ async function getFacilityStats(supabase: SupabaseClientType, orgId: string) {
 
   const openMaintenance = (pendingMaintenance || 0) + (inProgressMaintenance || 0)
 
-  // Get overdue maintenance requests (past due date)
   const today = new Date().toISOString().split('T')[0]
   const { count: overdueTickets } = await supabase
     .from('maintenance_requests')
@@ -438,7 +434,6 @@ async function getPurchasingStats(supabase: SupabaseClientType, orgId: string) {
     .eq('organization_id', orgId)
     .eq('status', 'submitted')
 
-  // Recent POs (created in last 30 days)
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   
@@ -448,7 +443,6 @@ async function getPurchasingStats(supabase: SupabaseClientType, orgId: string) {
     .eq('organization_id', orgId)
     .gte('created_at', thirtyDaysAgo.toISOString())
 
-  // Get PO trend for last 6 months
   const poTrend: { month: string; orders: number; amount: number }[] = []
   const now = new Date()
   for (let i = 5; i >= 0; i--) {
@@ -497,48 +491,199 @@ async function getSystemStats(supabase: SupabaseClientType, orgId: string) {
   }
 }
 
+// Stat Card Component
+function StatCard({ 
+  title, 
+  value, 
+  icon, 
+  trend, 
+  trendUp,
+  gradient 
+}: { 
+  title: string
+  value: string | number
+  icon: React.ReactNode
+  trend?: string
+  trendUp?: boolean
+  gradient: string
+}) {
+  return (
+    <div className={`relative overflow-hidden rounded-2xl p-6 ${gradient} shadow-lg`}>
+      <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+      <div className="relative">
+        <div className="flex items-center justify-between">
+          <div className="rounded-xl bg-white/20 p-3 backdrop-blur-sm">
+            {icon}
+          </div>
+          {trend && (
+            <div className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
+              trendUp ? 'bg-green-400/20 text-green-100' : 'bg-red-400/20 text-red-100'
+            }`}>
+              {trendUp ? (
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+              ) : (
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              )}
+              {trend}
+            </div>
+          )}
+        </div>
+        <div className="mt-4">
+          <p className="text-3xl font-bold text-white">{value}</p>
+          <p className="mt-1 text-sm font-medium text-white/80">{title}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Section Card Component
+function SectionCard({ 
+  title, 
+  children, 
+  href,
+  linkText = "View all →"
+}: { 
+  title: string
+  children: React.ReactNode
+  href: string
+  linkText?: string
+}) {
+  return (
+    <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        <Link 
+          href={href} 
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group"
+        >
+          {linkText}
+          <svg 
+            className="h-4 w-4 transition-transform group-hover:translate-x-1" 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+// Mini Stat Component
+function MiniStat({ label, value, color }: { label: string; value: number | string; color: string }) {
+  const colorClasses: Record<string, string> = {
+    blue: 'bg-blue-50 text-blue-700 border-blue-100',
+    green: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    yellow: 'bg-amber-50 text-amber-700 border-amber-100',
+    red: 'bg-red-50 text-red-700 border-red-100',
+    purple: 'bg-purple-50 text-purple-700 border-purple-100',
+    indigo: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+    gray: 'bg-gray-50 text-gray-700 border-gray-100',
+  }
+  
+  return (
+    <div className={`rounded-xl p-4 border ${colorClasses[color] || colorClasses.gray}`}>
+      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-xs font-medium mt-1 opacity-80">{label}</p>
+    </div>
+  )
+}
+
 export default async function DashboardPage() {
   const stats = await getSuperAdminStats()
 
+  const totalProjects = stats.projects.ongoing + stats.projects.onHold + stats.projects.completed
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Executive Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Overview of your real estate development operations
-        </p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+            Executive Dashboard
+          </h1>
+          <p className="mt-1 text-gray-500">
+            Welcome back! Here's what's happening with your operations today.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Last updated: {new Date().toLocaleTimeString()}
+        </div>
       </div>
 
-      {/* Projects Section */}
-      <Card title="Projects">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Ongoing</p>
-              <p className="mt-1 text-2xl font-semibold text-blue-600">{stats.projects.ongoing}</p>
-            </div>
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">On Hold</p>
-              <p className="mt-1 text-2xl font-semibold text-yellow-600">{stats.projects.onHold}</p>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="mt-1 text-2xl font-semibold text-green-600">{stats.projects.completed}</p>
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Budget Usage</p>
-              <p className="mt-1 text-2xl font-semibold text-purple-600">{stats.projects.budgetVsActual}%</p>
-            </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg col-span-2 sm:col-span-1">
-              <p className="text-sm font-medium text-gray-600">Overdue Tasks</p>
-              <p className="mt-1 text-2xl font-semibold text-red-600">{stats.projects.overdueTasks}</p>
-            </div>
+      {/* Top Stats Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Projects"
+          value={totalProjects}
+          gradient="bg-gradient-to-br from-blue-500 to-blue-600"
+          icon={
+            <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          }
+        />
+        <StatCard
+          title="Active Leads"
+          value={stats.marketing.totalLeads}
+          gradient="bg-gradient-to-br from-purple-500 to-purple-600"
+          trend={`${stats.marketing.conversionRate}% conv.`}
+          trendUp={stats.marketing.conversionRate > 0}
+          icon={
+            <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          }
+        />
+        <StatCard
+          title="Team Members"
+          value={stats.hr.totalEmployees}
+          gradient="bg-gradient-to-br from-emerald-500 to-emerald-600"
+          trend={`${stats.hr.activeEmployees} active`}
+          trendUp={true}
+          icon={
+            <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          }
+        />
+        <StatCard
+          title="Open Tickets"
+          value={stats.facilities.openMaintenance}
+          gradient="bg-gradient-to-br from-amber-500 to-orange-500"
+          trend={stats.facilities.overdueTickets > 0 ? `${stats.facilities.overdueTickets} overdue` : 'All on track'}
+          trendUp={stats.facilities.overdueTickets === 0}
+          icon={
+            <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+          }
+        />
+      </div>
+
+      {/* Projects & Marketing Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Projects */}
+        <SectionCard title="Projects Overview" href="/projects">
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <MiniStat label="Ongoing" value={stats.projects.ongoing} color="blue" />
+            <MiniStat label="On Hold" value={stats.projects.onHold} color="yellow" />
+            <MiniStat label="Completed" value={stats.projects.completed} color="green" />
           </div>
-          {/* Charts */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Project Status</h4>
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Status Distribution</h4>
               <DashboardCharts 
                 type="projectStatus" 
                 data={{ 
@@ -548,8 +693,8 @@ export default async function DashboardPage() {
                 }} 
               />
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Budget vs Actual</h4>
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Budget Analysis</h4>
               <DashboardCharts 
                 type="budget" 
                 data={{ 
@@ -559,40 +704,27 @@ export default async function DashboardPage() {
               />
             </div>
           </div>
-        </div>
-        <div className="mt-4">
-          <Link href="/projects" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-            View all projects →
-          </Link>
-        </div>
-      </Card>
+          {stats.projects.overdueTasks > 0 && (
+            <div className="mt-4 flex items-center gap-2 p-3 bg-red-50 rounded-xl border border-red-100">
+              <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span className="text-sm font-medium text-red-700">{stats.projects.overdueTasks} overdue tasks need attention</span>
+            </div>
+          )}
+        </SectionCard>
 
-      {/* Marketing/CRM Section */}
-      <Card title="Marketing & Sales">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Total Leads</p>
-              <p className="mt-1 text-2xl font-semibold text-purple-600">{stats.marketing.totalLeads}</p>
-            </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Hot Leads</p>
-              <p className="mt-1 text-2xl font-semibold text-red-600">{stats.marketing.hotLeads}</p>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Conversion</p>
-              <p className="mt-1 text-2xl font-semibold text-green-600">{stats.marketing.conversionRate}%</p>
-            </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Campaigns</p>
-              <p className="mt-1 text-2xl font-semibold text-blue-600">{stats.marketing.activeCampaigns}</p>
-            </div>
+        {/* Marketing */}
+        <SectionCard title="Sales & Marketing" href="/marketing">
+          <div className="grid grid-cols-4 gap-3 mb-6">
+            <MiniStat label="Hot" value={stats.marketing.hotLeads} color="red" />
+            <MiniStat label="Warm" value={stats.marketing.warmLeads} color="yellow" />
+            <MiniStat label="Cold" value={stats.marketing.coldLeads} color="blue" />
+            <MiniStat label="Won" value={stats.marketing.convertedLeads} color="green" />
           </div>
-          {/* Charts */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Lead Distribution</h4>
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Lead Pipeline</h4>
               <DashboardCharts 
                 type="leadStatus" 
                 data={{ 
@@ -603,109 +735,103 @@ export default async function DashboardPage() {
                 }} 
               />
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Lead Trend (6 months)</h4>
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">6-Month Trend</h4>
               <DashboardCharts 
                 type="leadTrend" 
                 data={stats.marketing.leadTrend} 
               />
             </div>
           </div>
-        </div>
-        <div className="mt-4">
-          <Link href="/marketing" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-            View CRM dashboard →
-          </Link>
-        </div>
-      </Card>
-
-      {/* HR Section */}
-      <Card title="Human Resources">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Total</p>
-              <p className="mt-1 text-2xl font-semibold text-gray-900">{stats.hr.totalEmployees}</p>
+          <div className="mt-4 flex items-center justify-between p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+            <div className="flex items-center gap-2">
+              <svg className="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              </svg>
+              <span className="text-sm font-medium text-indigo-700">{stats.marketing.activeCampaigns} active campaigns</span>
             </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Active</p>
-              <p className="mt-1 text-2xl font-semibold text-green-600">{stats.hr.activeEmployees}</p>
-            </div>
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Pending Leave</p>
-              <p className="mt-1 text-2xl font-semibold text-yellow-600">{stats.hr.pendingLeave}</p>
-            </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Expiring Docs</p>
-              <p className="mt-1 text-2xl font-semibold text-red-600">{stats.hr.expiringDocuments}</p>
-            </div>
+            <span className="text-sm font-bold text-indigo-600">{stats.marketing.conversionRate}% conversion</span>
           </div>
-          {/* Chart */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Employee Status</h4>
-            <DashboardCharts 
-              type="employeeStatus" 
-              data={{ 
-                active: stats.hr.activeEmployees, 
-                inactive: stats.hr.inactiveEmployees 
-              }} 
-            />
-          </div>
-        </div>
-        <div className="mt-4">
-          <Link href="/hr" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-            View HR dashboard →
-          </Link>
-        </div>
-      </Card>
+        </SectionCard>
+      </div>
 
-      {/* Inventory & Facilities Row */}
+      {/* HR & Inventory Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Inventory Section */}
-        <Card title="Inventory">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Total Items</p>
-              <p className="mt-1 text-2xl font-semibold text-blue-600">{stats.inventory.totalItems}</p>
+        {/* HR */}
+        <SectionCard title="Human Resources" href="/hr">
+          <div className="flex items-start gap-6">
+            <div className="flex-1">
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <MiniStat label="Active" value={stats.hr.activeEmployees} color="green" />
+                <MiniStat label="On Leave" value={stats.hr.pendingLeave} color="yellow" />
+              </div>
+              {stats.hr.expiringDocuments > 0 && (
+                <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                  <svg className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className="text-sm font-medium text-amber-700">{stats.hr.expiringDocuments} documents expiring soon</span>
+                </div>
+              )}
             </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Low Stock</p>
-              <p className="mt-1 text-2xl font-semibold text-red-600">{stats.inventory.lowStockItems}</p>
+            <div className="w-40 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 text-center">Status</h4>
+              <DashboardCharts 
+                type="employeeStatus" 
+                data={{ 
+                  active: stats.hr.activeEmployees, 
+                  inactive: stats.hr.inactiveEmployees 
+                }} 
+              />
             </div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Stock Levels</h4>
-            <DashboardCharts 
-              type="inventory" 
-              data={{ 
-                inStock: stats.inventory.inStockItems, 
-                lowStock: stats.inventory.lowStockItems,
-                outOfStock: stats.inventory.outOfStockItems 
-              }} 
-            />
-          </div>
-          <div className="mt-4">
-            <Link href="/inventory" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-              View inventory →
-            </Link>
-          </div>
-        </Card>
+        </SectionCard>
 
-        {/* Facilities Section */}
-        <Card title="Facilities">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Open Tickets</p>
-              <p className="mt-1 text-2xl font-semibold text-yellow-600">{stats.facilities.openMaintenance}</p>
+        {/* Inventory */}
+        <SectionCard title="Inventory Status" href="/inventory">
+          <div className="flex items-start gap-6">
+            <div className="flex-1">
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <MiniStat label="Total Items" value={stats.inventory.totalItems} color="indigo" />
+                <MiniStat label="Low Stock" value={stats.inventory.lowStockItems} color="red" />
+              </div>
+              {stats.inventory.outOfStockItems > 0 && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 rounded-xl border border-red-100">
+                  <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  <span className="text-sm font-medium text-red-700">{stats.inventory.outOfStockItems} items out of stock</span>
+                </div>
+              )}
             </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Overdue</p>
-              <p className="mt-1 text-2xl font-semibold text-red-600">{stats.facilities.overdueTickets}</p>
+            <div className="w-40 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 text-center">Levels</h4>
+              <DashboardCharts 
+                type="inventory" 
+                data={{ 
+                  inStock: stats.inventory.inStockItems, 
+                  lowStock: stats.inventory.lowStockItems,
+                  outOfStock: stats.inventory.outOfStockItems 
+                }} 
+              />
             </div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Maintenance Status</h4>
+        </SectionCard>
+      </div>
+
+      {/* Facilities & Purchasing Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Facilities */}
+        <SectionCard title="Facilities & Maintenance" href="/facilities">
+          <div className="grid grid-cols-4 gap-3 mb-4">
+            <MiniStat label="Pending" value={stats.facilities.pendingMaintenance} color="yellow" />
+            <MiniStat label="In Progress" value={stats.facilities.inProgressMaintenance} color="blue" />
+            <MiniStat label="Done" value={stats.facilities.completedMaintenance} color="green" />
+            <MiniStat label="Overdue" value={stats.facilities.overdueTickets} color="red" />
+          </div>
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Maintenance Overview</h4>
             <DashboardCharts 
               type="maintenance" 
               data={{ 
@@ -716,60 +842,51 @@ export default async function DashboardPage() {
               }} 
             />
           </div>
-          <div className="mt-4">
-            <Link href="/facilities" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-              View facilities →
-            </Link>
-          </div>
-        </Card>
-      </div>
+        </SectionCard>
 
-      {/* Purchasing & System Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Purchasing Section */}
-        <Card title="Purchasing">
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Open PRs</p>
-              <p className="mt-1 text-2xl font-semibold text-yellow-600">{stats.purchasing.openPRs}</p>
-            </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Pending</p>
-              <p className="mt-1 text-2xl font-semibold text-blue-600">{stats.purchasing.pendingApprovals}</p>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Recent POs</p>
-              <p className="mt-1 text-2xl font-semibold text-green-600">{stats.purchasing.recentPOs}</p>
-            </div>
+        {/* Purchasing */}
+        <SectionCard title="Procurement" href="/purchasing">
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <MiniStat label="Open PRs" value={stats.purchasing.openPRs} color="yellow" />
+            <MiniStat label="Pending" value={stats.purchasing.pendingApprovals} color="blue" />
+            <MiniStat label="Recent POs" value={stats.purchasing.recentPOs} color="green" />
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">PO Trend (6 months)</h4>
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">PO Trend (6 Months)</h4>
             <DashboardCharts 
               type="poTrend" 
               data={stats.purchasing.poTrend} 
             />
           </div>
-          <div className="mt-4">
-            <Link href="/purchasing" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-              View procurement →
-            </Link>
-          </div>
-        </Card>
+        </SectionCard>
+      </div>
 
-        {/* System Administration Section */}
-        <Card title="System Administration">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Total Users</p>
-              <p className="mt-1 text-2xl font-semibold text-gray-900">{stats.system.totalUsers}</p>
+      {/* System Admin Row */}
+      <SectionCard title="System Administration" href="/admin">
+        <div className="flex items-center gap-8">
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
+              <p className="text-3xl font-bold">{stats.system.totalUsers}</p>
+              <p className="text-sm font-medium text-indigo-100 mt-1">Total Users</p>
             </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Active Users</p>
-              <p className="mt-1 text-2xl font-semibold text-green-600">{stats.system.activeUsers}</p>
+            <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
+              <p className="text-3xl font-bold">{stats.system.activeUsers}</p>
+              <p className="text-sm font-medium text-emerald-100 mt-1">Active</p>
+            </div>
+            <div className="p-4 rounded-xl bg-gradient-to-br from-gray-400 to-gray-500 text-white">
+              <p className="text-3xl font-bold">{stats.system.inactiveUsers}</p>
+              <p className="text-sm font-medium text-gray-100 mt-1">Inactive</p>
+            </div>
+            <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+              <p className="text-3xl font-bold">
+                {stats.system.totalUsers > 0 
+                  ? Math.round((stats.system.activeUsers / stats.system.totalUsers) * 100) 
+                  : 0}%
+              </p>
+              <p className="text-sm font-medium text-purple-100 mt-1">Activity Rate</p>
             </div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">User Activity</h4>
+          <div className="hidden lg:block w-32">
             <DashboardCharts 
               type="users" 
               data={{ 
@@ -778,13 +895,8 @@ export default async function DashboardPage() {
               }} 
             />
           </div>
-          <div className="mt-4">
-            <Link href="/admin" className="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-              View admin panel →
-            </Link>
-          </div>
-        </Card>
-      </div>
+        </div>
+      </SectionCard>
     </div>
   )
 }
