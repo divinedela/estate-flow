@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/modal'
 import { FormInput } from '@/components/ui/form-input'
 import { FormSelect } from '@/components/ui/form-select'
 import { createClient } from '@/lib/supabase/client'
+import { createUser as createUserAction } from '@/app/actions/auth'
 import Link from 'next/link'
 
 interface AppUser {
@@ -180,7 +181,7 @@ export default function UsersPage() {
 
         setMessage({ type: 'success', text: 'User updated successfully!' })
       } else {
-        // Create new user
+        // Create new user using server action
         if (!formData.email || !formData.password) {
           throw new Error('Email and password are required')
         }
@@ -189,58 +190,21 @@ export default function UsersPage() {
           throw new Error('Password must be at least 6 characters')
         }
 
-        // Step 1: Create auth user using Supabase Admin API via edge function or direct signup
-        // Since we can't use admin API from client, we'll use signUp
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        const result = await createUserAction({
           email: formData.email,
           password: formData.password,
-          options: {
-            data: {
-              full_name: formData.full_name,
-            }
-          }
+          full_name: formData.full_name || undefined,
+          phone: formData.phone || undefined,
+          organization_id: formData.organization_id || undefined,
+          role_id: formData.role_id || undefined,
+          is_active: formData.is_active,
         })
 
-        if (authError) {
-          throw new Error(authError.message)
+        if (result.error) {
+          throw new Error(result.error)
         }
 
-        if (!authData.user) {
-          throw new Error('Failed to create user')
-        }
-
-        // Step 2: Create app_user record
-        const { data: appUserData, error: appUserError } = await supabase
-          .from('app_users')
-          .insert({
-            user_id: authData.user.id,
-            email: formData.email,
-            full_name: formData.full_name || null,
-            phone: formData.phone || null,
-            organization_id: formData.organization_id || null,
-            is_active: formData.is_active,
-          } as any)
-          .select()
-          .single()
-
-        if (appUserError) {
-          console.error('Error creating app_user:', appUserError)
-          // Try to clean up auth user if app_user creation fails
-          throw new Error('User created in auth but failed to create profile. Please contact administrator.')
-        }
-
-        // Step 3: Assign role
-        if (formData.role_id && appUserData) {
-          await supabase
-            .from('user_roles')
-            .insert({
-              user_id: appUserData.id,
-              role_id: formData.role_id,
-              organization_id: formData.organization_id || null,
-            } as any)
-        }
-
-        setMessage({ type: 'success', text: 'User created successfully! They can now log in with their email and password.' })
+        setMessage({ type: 'success', text: result.message || 'User created successfully! They can now log in with their email and password.' })
       }
 
       setIsModalOpen(false)
