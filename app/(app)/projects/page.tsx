@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card'
 import { RoleGuard } from '@/components/auth/role-guard'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { 
+import {
   FolderIcon,
   FolderPlusIcon,
   ClipboardDocumentListIcon,
@@ -18,6 +18,7 @@ import {
   EyeIcon,
   PencilIcon,
   RectangleStackIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline'
 
 interface Project {
@@ -177,14 +178,42 @@ async function getProjectStats() {
   }
 }
 
+async function getUserRole() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: appUser } = await supabase
+    .from('app_users')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!appUser) return null
+
+  const { data: userRoles } = await supabase
+    .from('user_roles')
+    .select('role:roles(name)')
+    .eq('user_id', appUser.id)
+
+  const roles = userRoles?.map((ur: any) => ur.role?.name).filter(Boolean) || []
+
+  if (roles.includes('super_admin')) return 'super_admin'
+  if (roles.includes('executive')) return 'executive'
+  if (roles.includes('project_manager')) return 'project_manager'
+  if (roles.includes('site_engineer')) return 'site_engineer'
+  return null
+}
+
 export default async function ProjectsPage() {
   const stats = await getProjectStats()
+  const userRole = await getUserRole()
 
   const quickLinks = [
     { name: 'All Projects', href: '/projects/list', icon: FolderIcon, color: 'bg-blue-500', description: 'View all projects' },
-    { name: 'Phases', href: '/projects/phases', icon: RectangleStackIcon, color: 'bg-amber-500', description: 'Manage phases' },
-    { name: 'Tasks', href: '/projects/tasks', icon: ClipboardDocumentListIcon, color: 'bg-purple-500', description: 'Manage tasks' },
-    { name: 'New Project', href: '/projects/new', icon: FolderPlusIcon, color: 'bg-green-500', description: 'Create project' },
+    { name: 'Tasks & Issues', href: '/projects/tasks', icon: ClipboardDocumentListIcon, color: 'bg-purple-500', description: 'Manage tasks & issues' },
+    { name: 'Phases', href: '/projects/phases', icon: RectangleStackIcon, color: 'bg-indigo-500', description: 'Manage phases' },
+    { name: 'New Project', href: '/projects/new', icon: FolderPlusIcon, color: 'bg-emerald-500', description: 'Create project' },
   ]
 
   const statusColors: Record<string, string> = {
@@ -300,7 +329,7 @@ export default async function ProjectsPage() {
           </div>
 
           {/* Quick Links */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {quickLinks.map((link) => (
               <Link key={link.name} href={link.href}>
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group">

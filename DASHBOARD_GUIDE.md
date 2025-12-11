@@ -39,6 +39,15 @@ All dashboards share common features:
 - Active marketing campaigns
 - Recent property sales/leases
 
+#### **Agents & Sales Team**
+- Total agents (active agents on team)
+- Top performing agents (leaderboard)
+- Team sales this month (properties sold/leased)
+- Total commissions earned (team earnings)
+- Pending commission payouts
+- Agents with expiring licenses
+- Unassigned leads (requiring agent assignment)
+
 #### **Human Resources**
 - Total employees (headcount)
 - Active employees
@@ -198,6 +207,13 @@ All dashboards share common features:
 - Can view linked inventory and purchasing data
 - Cannot access HR, Marketing, or other modules directly
 
+❌ Missing/Recommended (5 features):
+  1. Issues Tracking (separate from tasks)
+  2. Documents & Files Management
+  3. Reports & Analytics
+  4. Calendar & Timeline View
+  5. Project Communication/Messages
+
 ---
 
 ## 4. Site Engineer / Supervisor Dashboard
@@ -257,7 +273,202 @@ All dashboards share common features:
 
 ---
 
-## 5. Marketing / Sales Officer Dashboard
+## 5. Agent / Real Estate Agent Dashboard
+
+**Access Level:** Property sales and client management
+
+**Purpose:** Manage property listings, clients, sales, and commissions
+
+### Dashboard Sections:
+
+#### **My Performance**
+- **Total Sales This Month** (properties sold/leased)
+- **Sales Revenue** (total value of deals closed)
+- **Commission Earned** (this month/quarter/year)
+- **Active Listings** (properties I'm managing)
+- **Conversion Rate** (clients to sales)
+- **Performance Ranking** (compared to other agents)
+
+#### **My Clients**
+- **Total Clients** (all clients assigned to me)
+- **Active Clients** (currently engaged)
+- **Hot Prospects** (high potential buyers/tenants)
+- **Requiring Follow-up** (clients with upcoming appointments)
+- **Overdue Follow-ups** (missed appointments)
+- **Recent Conversions** (clients who purchased/leased)
+
+#### **My Properties**
+- **Properties Assigned to Me** (listings I'm managing)
+- **Available Listings** (properties for sale/lease)
+- **Under Negotiation** (properties with active offers)
+- **Recently Sold/Leased** (my recent deals)
+- **Property Views** (client interest metrics)
+- **Scheduled Viewings** (upcoming property tours)
+
+#### **Sales Pipeline**
+- **Pipeline Stages** (visual funnel specific to my deals)
+  - New inquiry
+  - Property viewing scheduled
+  - Viewing completed
+  - Offer submitted
+  - Negotiation
+  - Contract signed
+  - Deal closed
+- **Pipeline Value** (total potential commission)
+- **Expected Closings** (this month)
+
+#### **Commission Tracking**
+- **Pending Commissions** (awaiting payment)
+- **Paid Commissions** (this month/quarter/year)
+- **Commission by Property Type** (residential, commercial, land)
+- **Commission Rate** (percentage per deal)
+- **Top Earning Properties** (highest commission deals)
+
+#### **My Territory**
+- **Assigned Areas** (geographic territories I cover)
+- **Territory Performance** (sales by area)
+- **Available Properties in Territory** (listings in my areas)
+- **Market Trends** (property values, demand in my territory)
+
+#### **Activities & Schedule**
+- **Today's Appointments** (viewings, meetings, calls)
+- **This Week's Schedule** (upcoming activities)
+- **Recent Activities** (logged interactions)
+- **Activity Summary** (calls, emails, viewings, meetings)
+
+#### **Leads & Referrals**
+- **New Leads Assigned to Me** (from marketing/CRM)
+- **Lead Status** (new, contacted, qualified, converted)
+- **Referrals** (leads from existing clients)
+- **Lead Response Time** (how quickly I respond)
+
+#### **Documents**
+- **License Status** (real estate license expiry)
+- **Certifications** (professional certifications)
+- **Contract Templates** (sale agreements, lease agreements)
+- **Marketing Materials** (brochures, flyers)
+- **Compliance Documents** (regulatory requirements)
+
+#### **Quick Actions**
+- Add new client
+- Schedule property viewing
+- Record sale/lease
+- Log activity
+- Update property status
+- Generate commission report
+- View client portfolio
+- Schedule follow-up
+
+**Key Features:**
+- Full access to Agents module
+- Can manage own clients and properties
+- Can view assigned leads from Marketing/CRM
+- Can track own performance and commissions
+- Can schedule appointments and viewings
+- Can generate commission reports
+- Can update property status (under offer, sold, leased)
+- Cannot access other agents' data (unless team lead/manager)
+- Cannot access HR, Projects, or other unrelated modules
+
+---
+
+## 6. Agent Manager / Sales Manager Dashboard
+
+**Access Level:** Agent team management and oversight
+
+**Purpose:** Manage real estate agent team, track performance, and optimize sales
+
+### Dashboard Sections:
+
+#### **Team Performance**
+- **Total Team Sales** (this month/quarter/year)
+- **Total Commission Generated** (team earnings)
+- **Team Conversion Rate** (overall performance)
+- **Active Agents** (agents on the team)
+- **Top Performers** (leaderboard)
+- **Underperformers** (agents needing support)
+
+#### **Agent Overview**
+- **Total Agents** (team size)
+- **Active Agents** (currently working)
+- **New Agents** (recently joined)
+- **Agent Status** (active, on leave, inactive)
+- **Agent Specializations** (residential, commercial, luxury)
+
+#### **Sales Analytics**
+- **Sales by Agent** (individual performance)
+- **Sales by Property Type** (residential vs. commercial)
+- **Sales by Territory** (geographic performance)
+- **Average Deal Size** (per agent, per property type)
+- **Time to Close** (average days from listing to sale)
+
+#### **Commission Management**
+- **Total Commissions Paid** (this month/quarter)
+- **Pending Commission Payouts** (awaiting approval)
+- **Commission by Agent** (individual earnings)
+- **Commission Structure** (rates and tiers)
+- **Commission Disputes** (issues requiring resolution)
+
+#### **Property Distribution**
+- **Total Properties Under Management** (all listings)
+- **Properties by Agent** (distribution of listings)
+- **Available vs. Sold** (inventory status)
+- **Average Time on Market** (days to sell/lease)
+- **Property Assignment Queue** (new listings to assign)
+
+#### **Territory Management**
+- **Territory Coverage** (areas assigned to agents)
+- **Territory Performance** (sales by area)
+- **Territory Gaps** (underserved areas)
+- **Market Opportunities** (high-demand areas)
+
+#### **Client Portfolio**
+- **Total Clients** (all clients across team)
+- **Client Satisfaction** (ratings/feedback if tracked)
+- **Client Retention Rate** (repeat business)
+- **High-Value Clients** (VIP clients)
+
+#### **Training & Development**
+- **Agent Certifications** (licenses, training)
+- **Expiring Licenses** (agents with upcoming renewals)
+- **Training Programs** (ongoing education)
+- **Performance Reviews** (scheduled reviews)
+
+#### **Leads & Assignments**
+- **Incoming Leads** (from Marketing/CRM)
+- **Lead Distribution** (leads assigned to agents)
+- **Unassigned Leads** (leads needing assignment)
+- **Lead Conversion by Agent** (performance tracking)
+
+#### **Alerts & Notifications**
+- **License Expiries** (agents with expiring licenses)
+- **Underperforming Agents** (below targets)
+- **Commission Disputes** (requiring attention)
+- **Hot Leads** (high-priority leads to assign)
+
+#### **Quick Actions**
+- Assign lead to agent
+- Assign property to agent
+- Approve commission payout
+- Add new agent
+- Schedule team meeting
+- Generate team performance report
+- Review agent activity
+- Manage territories
+
+**Key Features:**
+- Full access to Agents module (all agents)
+- Can view all agent performance and data
+- Can assign leads and properties to agents
+- Can approve commission payouts
+- Can manage territories and assignments
+- Can access Marketing/CRM for lead distribution
+- Can generate team reports and analytics
+- Cannot access HR, Projects, or other unrelated modules
+
+---
+
+## 7. Marketing / Sales Officer Dashboard
 
 **Access Level:** Marketing and CRM management
 
@@ -323,7 +534,7 @@ All dashboards share common features:
 
 ---
 
-## 6. Procurement / Purchasing Officer Dashboard
+## 8. Procurement / Purchasing Officer Dashboard
 
 **Access Level:** Purchasing and procurement management
 
@@ -386,7 +597,7 @@ All dashboards share common features:
 
 ---
 
-## 7. Inventory / Store Officer Dashboard
+## 9. Inventory / Store Officer Dashboard
 
 **Access Level:** Stock and inventory management
 
@@ -454,7 +665,7 @@ All dashboards share common features:
 
 ---
 
-## 8. Facility Manager Dashboard
+## 10. Facility Manager Dashboard
 
 **Access Level:** Facility and maintenance management
 
@@ -516,7 +727,7 @@ All dashboards share common features:
 
 ---
 
-## 9. Executive / Director Dashboard (Read-Only)
+## 11. Executive / Director Dashboard (Read-Only)
 
 **Access Level:** Read-only executive reporting
 
@@ -541,6 +752,13 @@ All dashboards share common features:
 - **Conversion Rate** (leads to customers)
 - **Active Campaigns**
 - **Property Sales/Leases** (this month/quarter)
+
+#### **Agents & Sales Team**
+- **Total Agents** (active agents)
+- **Team Performance** (total sales this month)
+- **Top Performing Agents** (leaderboard top 5)
+- **Total Commissions Paid** (this month/quarter)
+- **Average Deal Size** (per agent)
 
 #### **Human Resources**
 - **Total Employees** (headcount)
@@ -570,6 +788,252 @@ All dashboards share common features:
 - Can view audit logs
 - Cannot create, edit, or delete records
 - Designed for monitoring and decision-making
+
+---
+
+## Agents Module - Detailed Feature Breakdown
+
+### Module Overview
+
+The **Agents Module** is a comprehensive system for managing real estate agents, tracking their performance, managing commissions, and optimizing property sales. It integrates with Marketing/CRM and Properties modules to provide end-to-end sales management.
+
+### Key Features
+
+#### **1. Agent Management**
+- **Agent Profiles**
+  - Personal information (name, contact, photo)
+  - License number and expiry date
+  - Certifications and qualifications
+  - Specializations (residential, commercial, luxury, land)
+  - Employment status (active, on leave, inactive)
+  - Territory assignments
+  - Commission rates and tiers
+  - Performance history
+
+- **Agent Hierarchy**
+  - Agent levels (Junior, Senior, Team Lead, Manager)
+  - Reporting structure
+  - Team assignments
+  - Mentorship relationships
+
+#### **2. Commission Management**
+- **Commission Structures**
+  - Flat rate commissions (e.g., 3% of sale price)
+  - Tiered commissions (higher rates for higher values)
+  - Split commissions (between multiple agents)
+  - Bonus commissions (for targets achieved)
+
+- **Commission Tracking**
+  - Pending commissions (sales closed, payment pending)
+  - Paid commissions (payment completed)
+  - Commission by period (month, quarter, year)
+  - Commission by property type
+  - Commission disputes and resolutions
+
+- **Commission Reports**
+  - Individual agent reports
+  - Team commission summary
+  - Commission trends and analytics
+  - Tax documentation (1099 forms, etc.)
+
+#### **3. Performance Tracking**
+- **Individual Metrics**
+  - Total sales (count and value)
+  - Conversion rate (viewings to sales)
+  - Average deal size
+  - Time to close (average days)
+  - Client satisfaction ratings
+  - Response time to leads
+  - Activity levels (calls, meetings, viewings)
+
+- **Team Metrics**
+  - Team sales performance
+  - Top performers leaderboard
+  - Underperformer identification
+  - Performance trends
+  - Comparative analytics
+
+#### **4. Territory Management**
+- **Territory Assignment**
+  - Geographic area assignments
+  - Coverage maps
+  - Territory performance tracking
+  - Territory optimization
+
+- **Market Analysis**
+  - Property values by territory
+  - Demand trends
+  - Competition analysis
+  - Market opportunities
+
+#### **5. Client Management**
+- **Client Portfolio**
+  - Clients assigned to each agent
+  - Client status (active, hot, cold, converted)
+  - Client history and interactions
+  - Client preferences and requirements
+  - High-value client identification
+
+- **Client Activities**
+  - Property viewings scheduled
+  - Follow-up appointments
+  - Interaction logging (calls, emails, meetings)
+  - Activity history and timeline
+
+#### **6. Property Assignment**
+- **Listing Management**
+  - Properties assigned to agents
+  - Property status (available, under offer, sold, leased)
+  - Multiple agents per property (co-listing)
+  - Property performance tracking (views, inquiries)
+
+- **Assignment Rules**
+  - Auto-assignment based on territory
+  - Manual assignment by manager
+  - Round-robin distribution
+  - Specialization-based assignment
+
+#### **7. Lead Integration**
+- **Lead Assignment**
+  - Incoming leads from Marketing/CRM
+  - Lead routing to appropriate agents
+  - Lead scoring and prioritization
+  - Unassigned lead queue
+
+- **Lead Management**
+  - Lead status tracking
+  - Lead conversion tracking
+  - Lead response time monitoring
+  - Lead nurturing workflows
+
+#### **8. Schedule & Appointments**
+- **Calendar Management**
+  - Property viewing appointments
+  - Client meetings
+  - Follow-up schedules
+  - Team meetings and training
+
+- **Reminders & Notifications**
+  - Upcoming appointments
+  - Overdue follow-ups
+  - Task reminders
+  - Performance alerts
+
+#### **9. Documents & Compliance**
+- **Agent Documents**
+  - Real estate license (with expiry tracking)
+  - Professional certifications
+  - Compliance training records
+  - Insurance documents
+
+- **Transaction Documents**
+  - Contract templates (sale agreements, lease agreements)
+  - Offer letters
+  - Disclosure forms
+  - Closing documents
+
+- **Marketing Materials**
+  - Property brochures
+  - Flyers and marketing collateral
+  - Presentation templates
+  - Email templates
+
+#### **10. Reports & Analytics**
+- **Performance Reports**
+  - Individual agent performance
+  - Team performance summary
+  - Period-over-period comparison
+  - Goal vs. actual tracking
+
+- **Commission Reports**
+  - Commission earned and paid
+  - Commission forecasts
+  - Commission by property type
+  - Tax documentation
+
+- **Market Reports**
+  - Sales trends by territory
+  - Property type performance
+  - Price trends and analysis
+  - Market share analysis
+
+### Integration Points
+
+#### **Marketing/CRM Integration**
+- Leads flow from Marketing to Agents module
+- Property inquiries create agent tasks
+- Campaign performance affects lead distribution
+- Contact management shared between modules
+
+#### **Properties Module Integration**
+- Properties assigned to agents for management
+- Property status updates (listed, under offer, sold)
+- Property viewing history
+- Transaction records
+
+#### **HR Module Integration** (Optional)
+- Agent employees tracked in HR system
+- Payroll integration for commission payments
+- Leave management for agents
+- Performance reviews
+
+#### **Finance Module Integration** (Future)
+- Commission payment processing
+- Revenue tracking
+- Financial reporting
+- Tax documentation
+
+### User Roles & Permissions
+
+#### **Agent Role**
+- ✅ View own dashboard and performance
+- ✅ Manage assigned clients
+- ✅ Manage assigned properties
+- ✅ Schedule appointments and viewings
+- ✅ Log activities and interactions
+- ✅ View own commission data
+- ✅ Generate own reports
+- ❌ Cannot view other agents' data
+- ❌ Cannot assign leads or properties
+- ❌ Cannot approve commissions
+
+#### **Agent Manager Role**
+- ✅ View all agents' data and performance
+- ✅ Assign leads to agents
+- ✅ Assign properties to agents
+- ✅ Manage territories
+- ✅ Approve commission payouts
+- ✅ Generate team reports
+- ✅ Manage agent profiles
+- ✅ Track team performance
+- ❌ Cannot access unrelated modules (HR, Projects)
+
+#### **Super Admin Role**
+- ✅ Full access to all agent data
+- ✅ Configure commission structures
+- ✅ Manage agent roles and permissions
+- ✅ Access all reports and analytics
+- ✅ System configuration
+
+### Benefits
+
+1. **For Agents:**
+   - Clear visibility of own performance
+   - Easy client and property management
+   - Automated commission tracking
+   - Streamlined appointment scheduling
+
+2. **For Managers:**
+   - Real-time team performance insights
+   - Fair lead distribution
+   - Commission automation
+   - Data-driven decision making
+
+3. **For Business:**
+   - Increased sales efficiency
+   - Better resource allocation
+   - Improved agent accountability
+   - Enhanced customer service
 
 ---
 

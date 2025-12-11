@@ -2,9 +2,86 @@ import { createClient } from '@/lib/supabase/server'
 import { Database } from '@/types/database'
 import { SupabaseClient } from '@supabase/supabase-js'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { DashboardCharts } from './dashboard-charts'
 
 type SupabaseClientType = SupabaseClient<Database>
+
+// Check user roles and redirect to appropriate dashboard
+async function checkUserRoleAndRedirect() {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return null // No redirect, show empty stats
+  }
+
+  // Get user's app_user profile
+  const { data: appUser } = await supabase
+    .from('app_users')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!appUser) {
+    return null
+  }
+
+  // Get user's roles
+  const { data: userRoles } = await supabase
+    .from('user_roles')
+    .select('role:roles(name)')
+    .eq('user_id', appUser.id)
+
+  const roles = userRoles?.map((ur: any) => ur.role?.name).filter(Boolean) || []
+
+  // Redirect based on primary role (in priority order)
+  // Super admins see executive dashboard (no redirect)
+  if (roles.includes('super_admin')) {
+    return null // Stay on executive dashboard
+  }
+
+  // Executives see executive dashboard (no redirect)
+  if (roles.includes('executive')) {
+    return null // Stay on executive dashboard
+  }
+
+  // Role-specific redirects
+  if (roles.includes('hr_manager')) {
+    redirect('/hr')
+  }
+
+  if (roles.includes('project_manager')) {
+    redirect('/projects')
+  }
+
+  if (roles.includes('marketing_officer')) {
+    redirect('/marketing')
+  }
+
+  if (roles.includes('procurement_officer')) {
+    redirect('/purchasing')
+  }
+
+  if (roles.includes('inventory_officer')) {
+    redirect('/inventory')
+  }
+
+  if (roles.includes('facility_manager')) {
+    redirect('/facilities')
+  }
+
+  if (roles.includes('agent_manager')) {
+    redirect('/agents/manager')
+  }
+
+  if (roles.includes('agent')) {
+    redirect('/agents/dashboard')
+  }
+
+  // Default: stay on executive dashboard
+  return null
+}
 
 // Fetch all dashboard stats for Super Admin
 async function getSuperAdminStats() {
@@ -598,6 +675,9 @@ function MiniStat({ label, value, color }: { label: string; value: number | stri
 }
 
 export default async function DashboardPage() {
+  // Check user role and redirect if necessary
+  await checkUserRoleAndRedirect()
+
   const stats = await getSuperAdminStats()
 
   const totalProjects = stats.projects.ongoing + stats.projects.onHold + stats.projects.completed

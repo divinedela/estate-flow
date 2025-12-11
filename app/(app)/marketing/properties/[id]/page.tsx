@@ -73,7 +73,7 @@ export default async function PropertyDetailPage({
   const project = property.project as any
 
   return (
-    <RoleGuard allowedRoles={['super_admin', 'marketing_officer', 'project_manager']}>
+    <RoleGuard allowedRoles={['super_admin', 'marketing_officer', 'project_manager', 'agent', 'agent_manager', 'executive']}>
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">

@@ -83,12 +83,38 @@ export default function LeavePage() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
+  const [userRole, setUserRole] = useState<string | null>(null)
 
   const supabase = createClient()
 
   useEffect(() => {
+    fetchUserRole()
     fetchLeaveRequests()
   }, [])
+
+  async function fetchUserRole() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: appUser } = await supabase
+      .from('app_users')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!appUser) return
+
+    const { data: userRoles } = await supabase
+      .from('user_roles')
+      .select('role:roles(name)')
+      .eq('user_id', appUser.id)
+
+    const roles = userRoles?.map((ur: any) => ur.role?.name).filter(Boolean) || []
+
+    if (roles.includes('super_admin')) setUserRole('super_admin')
+    else if (roles.includes('executive')) setUserRole('executive')
+    else if (roles.includes('hr_manager')) setUserRole('hr_manager')
+  }
 
   async function fetchLeaveRequests() {
     setLoading(true)
@@ -297,21 +323,30 @@ export default function LeavePage() {
     }).length,
   }
 
+  const showBackButton = userRole === 'super_admin' || userRole === 'executive'
+
   return (
-    <RoleGuard allowedRoles={['super_admin', 'hr_manager']}>
+    <RoleGuard allowedRoles={['super_admin', 'hr_manager', 'executive']}>
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/hr" className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                <ArrowLeftIcon className="h-5 w-5" />
-              </Link>
+              {showBackButton && (
+                <Link href="/hr" className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                  <ArrowLeftIcon className="h-5 w-5" />
+                </Link>
+              )}
               <div>
-                <div className="flex items-center space-x-2">
-                  <Link href="/hr" className="text-sm text-indigo-600 hover:text-indigo-500">HR</Link>
-                  <span className="text-gray-400">/</span>
-                  <span className="text-sm text-gray-500">Leave Management</span>
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900">Leave Management</h1>
+                {showBackButton && (
+                  <div className="flex items-center space-x-2 mb-1">
+                    <Link href="/hr" className="text-sm text-indigo-600 hover:text-indigo-500">HR</Link>
+                    <span className="text-gray-400">/</span>
+                    <span className="text-sm text-gray-500">Leave Management</span>
+                  </div>
+                )}
+                <h1 className="text-3xl font-bold text-gray-900">Leave Management</h1>
+                <p className="mt-1 text-sm text-gray-500">
+                  Manage employee leave requests and approvals
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-3">

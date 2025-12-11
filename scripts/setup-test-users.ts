@@ -45,6 +45,7 @@ const testUsers: TestUser[] = [
     roleName: 'super_admin',
   },
   {
+  
     email: 'hrmanager@test.com',
     fullName: 'HR Manager User',
     roleName: 'hr_manager',

@@ -74,7 +74,12 @@ SELECT create_test_user('REPLACE_WITH_PROCUREMENT_AUTH_ID', 'procurement@test.co
 SELECT create_test_user('REPLACE_WITH_INVENTORY_AUTH_ID', 'inventory@test.com', 'Inventory Officer User', 'inventory_officer');
 SELECT create_test_user('REPLACE_WITH_FACILITY_AUTH_ID', 'facility@test.com', 'Facility Manager User', 'facility_manager');
 SELECT create_test_user('REPLACE_WITH_EXECUTIVE_AUTH_ID', 'executive@test.com', 'Executive User', 'executive');
+SELECT create_test_user('REPLACE_WITH_AGENT_AUTH_ID', 'agent@test.com', 'Agent User', 'agent');
+SELECT create_test_user('REPLACE_WITH_AGENT_MANAGER_AUTH_ID', 'agentmanager@test.com', 'Agent Manager User', 'agent_manager');
 */
 
 
 
+  - /projects/messages - Communication
+  - /projects/reports - Reporting
+  - /projects/calendar - Calendar view

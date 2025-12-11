@@ -51,9 +51,20 @@ interface AttendanceToday {
   onLeave: number
 }
 
+interface DocumentAlert {
+  id: string
+  employee_id: string
+  document_type: string
+  expiry_date: string
+  employee: {
+    first_name: string
+    last_name: string
+  } | null
+}
+
 async function getHRStats() {
   const supabase = await createClient()
-  
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return {
@@ -69,6 +80,9 @@ async function getHRStats() {
       recentEmployees: [] as Employee[],
       pendingLeaveList: [] as LeaveRequest[],
       departmentStats: [] as { department: string; count: number }[],
+      expiringDocumentsList: [] as DocumentAlert[],
+      expiredDocumentsList: [] as DocumentAlert[],
+      approvedLeavesUpcoming: [] as LeaveRequest[],
     }
   }
 
@@ -92,6 +106,9 @@ async function getHRStats() {
       recentEmployees: [] as Employee[],
       pendingLeaveList: [] as LeaveRequest[],
       departmentStats: [] as { department: string; count: number }[],
+      expiringDocumentsList: [] as DocumentAlert[],
+      expiredDocumentsList: [] as DocumentAlert[],
+      approvedLeavesUpcoming: [] as LeaveRequest[],
     }
   }
 
@@ -170,26 +187,53 @@ async function getHRStats() {
   // Documents
   let expiringDocuments = 0
   let expiredDocuments = 0
+  let expiringDocumentsList: DocumentAlert[] = []
+  let expiredDocumentsList: DocumentAlert[] = []
 
   if (employeeIds.length > 0) {
-    const { count: expiringCount } = await supabase
+    const { count: expiringCount, data: expiringDocs } = await supabase
       .from('employee_documents')
-      .select('*', { count: 'exact', head: true })
+      .select('id, employee_id, document_type, expiry_date, employee:employees(first_name, last_name)', { count: 'exact' })
       .in('employee_id', employeeIds)
       .not('expiry_date', 'is', null)
       .lte('expiry_date', thirtyDaysFromNow.toISOString().split('T')[0])
       .gte('expiry_date', today)
+      .order('expiry_date', { ascending: true })
+      .limit(5)
 
     expiringDocuments = expiringCount || 0
+    expiringDocumentsList = (expiringDocs || []) as DocumentAlert[]
 
-    const { count: expiredCount } = await supabase
+    const { count: expiredCount, data: expiredDocs } = await supabase
       .from('employee_documents')
-      .select('*', { count: 'exact', head: true })
+      .select('id, employee_id, document_type, expiry_date, employee:employees(first_name, last_name)', { count: 'exact' })
       .in('employee_id', employeeIds)
       .not('expiry_date', 'is', null)
       .lt('expiry_date', today)
+      .order('expiry_date', { ascending: false })
+      .limit(5)
 
     expiredDocuments = expiredCount || 0
+    expiredDocumentsList = (expiredDocs || []) as DocumentAlert[]
+  }
+
+  // Approved leaves upcoming
+  let approvedLeavesUpcoming: LeaveRequest[] = []
+  if (employeeIds.length > 0) {
+    const { data: upcomingLeaves } = await supabase
+      .from('leave_requests')
+      .select(`
+        id, employee_id, start_date, end_date, days_requested, status, created_at,
+        employee:employees(first_name, last_name),
+        leave_type:leave_types(name)
+      `)
+      .eq('status', 'approved')
+      .gte('start_date', today)
+      .in('employee_id', employeeIds)
+      .order('start_date', { ascending: true })
+      .limit(5)
+
+    approvedLeavesUpcoming = (upcomingLeaves || []) as LeaveRequest[]
   }
 
   // Today's attendance
@@ -225,11 +269,41 @@ async function getHRStats() {
     recentEmployees,
     pendingLeaveList,
     departmentStats,
+    expiringDocumentsList,
+    expiredDocumentsList,
+    approvedLeavesUpcoming,
   }
+}
+
+async function getUserRole() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: appUser } = await supabase
+    .from('app_users')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!appUser) return null
+
+  const { data: userRoles } = await supabase
+    .from('user_roles')
+    .select('role:roles(name)')
+    .eq('user_id', appUser.id)
+
+  const roles = userRoles?.map((ur: any) => ur.role?.name).filter(Boolean) || []
+
+  if (roles.includes('super_admin')) return 'super_admin'
+  if (roles.includes('executive')) return 'executive'
+  if (roles.includes('hr_manager')) return 'hr_manager'
+  return null
 }
 
 export default async function HRPage() {
   const stats = await getHRStats()
+  const userRole = await getUserRole()
 
   const quickLinks = [
     { name: 'Employees', href: '/hr/employees', icon: UserGroupIcon, color: 'bg-blue-500', description: 'Manage employee records' },
@@ -322,25 +396,130 @@ export default async function HRPage() {
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {quickLinks.map((link) => (
-              <Link key={link.name} href={link.href}>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group">
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-lg ${link.color}`}>
-                      <link.icon className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                        {link.name}
-                      </h3>
-                      <p className="text-sm text-gray-500">{link.description}</p>
+          {/* Quick Links - Only for super_admin and executive */}
+          {(userRole === 'super_admin' || userRole === 'executive') && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {quickLinks.map((link) => (
+                <Link key={link.name} href={link.href}>
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group">
+                    <div className="flex items-center space-x-4">
+                      <div className={`p-3 rounded-lg ${link.color}`}>
+                        <link.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                          {link.name}
+                        </h3>
+                        <p className="text-sm text-gray-500">{link.description}</p>
+                      </div>
                     </div>
                   </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Secondary Stats Grid - Document Alerts & Upcoming Leaves */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Expiring Documents */}
+            <Card>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Expiring Documents</h3>
+                  <p className="text-sm text-gray-500">Within next 30 days</p>
                 </div>
-              </Link>
-            ))}
+                <Link href="/hr/documents" className="text-sm text-indigo-600 hover:text-indigo-500">
+                  View all →
+                </Link>
+              </div>
+              {stats.expiringDocumentsList.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircleIcon className="h-12 w-12 text-green-300 mx-auto" />
+                  <p className="mt-2 text-gray-500">No documents expiring soon</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {stats.expiringDocumentsList.map((doc) => {
+                    const daysUntilExpiry = Math.ceil((new Date(doc.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                    return (
+                      <div key={doc.id} className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">
+                              {doc.employee?.first_name} {doc.employee?.last_name}
+                            </p>
+                            <p className="text-sm text-gray-600">{doc.document_type}</p>
+                            <p className="text-xs text-yellow-700 mt-1">
+                              Expires: {new Date(doc.expiry_date).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="text-right ml-2">
+                            <span className="text-lg font-bold text-yellow-600">{daysUntilExpiry}</span>
+                            <p className="text-xs text-yellow-600">days</p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              {stats.expiredDocumentsList.length > 0 && (
+                <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+                  <p className="text-sm font-medium text-red-800 mb-2">
+                    {stats.expiredDocuments} Expired Documents
+                  </p>
+                  <Link href="/hr/documents" className="text-xs text-red-600 hover:text-red-700 font-medium">
+                    View expired documents →
+                  </Link>
+                </div>
+              )}
+            </Card>
+
+            {/* Upcoming Approved Leaves */}
+            <Card>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Upcoming Leave</h3>
+                  <p className="text-sm text-gray-500">Approved leave requests</p>
+                </div>
+                <Link href="/hr/leave" className="text-sm text-indigo-600 hover:text-indigo-500">
+                  View all →
+                </Link>
+              </div>
+              {stats.approvedLeavesUpcoming.length === 0 ? (
+                <div className="text-center py-8">
+                  <CalendarDaysIcon className="h-12 w-12 text-gray-300 mx-auto" />
+                  <p className="mt-2 text-gray-500">No upcoming leaves</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {stats.approvedLeavesUpcoming.map((leave) => {
+                    const daysUntilLeave = Math.ceil((new Date(leave.start_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                    return (
+                      <div key={leave.id} className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">
+                              {leave.employee?.first_name} {leave.employee?.last_name}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {leave.leave_type?.name || 'Leave'} • {leave.days_requested} day(s)
+                            </p>
+                            <p className="text-xs text-blue-700 mt-1">
+                              {new Date(leave.start_date).toLocaleDateString()} - {new Date(leave.end_date).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="text-right ml-2">
+                            <span className="text-lg font-bold text-blue-600">{daysUntilLeave}</span>
+                            <p className="text-xs text-blue-600">days</p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </Card>
           </div>
 
           {/* Main Content Grid */}

@@ -15,6 +15,17 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   ArrowRightOnRectangleIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  RectangleStackIcon,
+  ClipboardDocumentListIcon,
+  CurrencyDollarIcon,
+  ExclamationTriangleIcon,
+  CalendarIcon,
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  UsersIcon,
 } from '@heroicons/react/24/outline'
 import { useUser } from '@/lib/contexts/user-context'
 import { createClient } from '@/lib/supabase/client'
@@ -24,6 +35,7 @@ interface NavItem {
   href: string
   icon: React.ComponentType<{ className?: string }>
   subItems?: NavItem[]
+  allowedRoles?: string[] // Roles that can see this item. Empty = everyone can see
 }
 
 const navigation: NavItem[] = [
@@ -31,41 +43,174 @@ const navigation: NavItem[] = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: HomeIcon,
+    allowedRoles: ['super_admin', 'executive'],
   },
+  // HR Module - Individual pages (only for hr_manager)
+  {
+    name: 'HR Dashboard',
+    href: '/hr',
+    icon: HomeIcon,
+    allowedRoles: ['hr_manager'],
+  },
+  {
+    name: 'Employees',
+    href: '/hr/employees',
+    icon: UserGroupIcon,
+    allowedRoles: ['hr_manager'],
+  },
+  {
+    name: 'Leave Management',
+    href: '/hr/leave',
+    icon: CalendarDaysIcon,
+    allowedRoles: ['hr_manager'],
+  },
+  {
+    name: 'Attendance',
+    href: '/hr/attendance',
+    icon: ClockIcon,
+    allowedRoles: ['hr_manager'],
+  },
+  {
+    name: 'Documents',
+    href: '/hr/documents',
+    icon: DocumentTextIcon,
+    allowedRoles: ['hr_manager'],
+  },
+  // Projects Module - Individual pages (only for project_manager and site_engineer)
+  {
+    name: 'Projects Dashboard',
+    href: '/projects',
+    icon: HomeIcon,
+    allowedRoles: ['project_manager', 'site_engineer'],
+  },
+  {
+    name: 'Team Management',
+    href: '/projects/team',
+    icon: UserGroupIcon,
+    allowedRoles: ['project_manager', 'site_engineer'],
+  },
+  {
+    name: 'Budget & Costs',
+    href: '/projects/budget',
+    icon: CurrencyDollarIcon,
+    allowedRoles: ['project_manager', 'site_engineer'],
+  },
+  {
+    name: 'Issues',
+    href: '/projects/issues',
+    icon: ExclamationTriangleIcon,
+    allowedRoles: ['project_manager', 'site_engineer'],
+  },
+  {
+    name: 'Documents',
+    href: '/projects/documents',
+    icon: DocumentTextIcon,
+    allowedRoles: ['project_manager', 'site_engineer'],
+  },
+  {
+    name: 'Reports',
+    href: '/projects/reports',
+    icon: ChartBarIcon,
+    allowedRoles: ['project_manager', 'site_engineer'],
+  },
+  {
+    name: 'Calendar',
+    href: '/projects/calendar',
+    icon: CalendarIcon,
+    allowedRoles: ['project_manager', 'site_engineer'],
+  },
+  {
+    name: 'Messages',
+    href: '/projects/messages',
+    icon: ChatBubbleLeftRightIcon,
+    allowedRoles: ['project_manager', 'site_engineer'],
+  },
+  // Module dashboards (for super_admin and executives)
   {
     name: 'HR',
     href: '/hr',
     icon: UserGroupIcon,
+    allowedRoles: ['super_admin', 'executive'],
   },
   {
     name: 'Marketing / CRM',
     href: '/marketing',
     icon: MegaphoneIcon,
+    allowedRoles: ['super_admin', 'marketing_officer', 'executive'],
   },
   {
     name: 'Projects',
     href: '/projects',
     icon: FolderIcon,
+    allowedRoles: ['super_admin', 'executive'],
   },
   {
     name: 'Inventory',
     href: '/inventory',
     icon: CubeIcon,
+    allowedRoles: ['super_admin', 'inventory_officer', 'executive', 'project_manager'],
   },
   {
     name: 'Facilities',
     href: '/facilities',
     icon: BuildingOfficeIcon,
+    allowedRoles: ['super_admin', 'facility_manager', 'executive'],
   },
   {
     name: 'Purchasing',
     href: '/purchasing',
     icon: ShoppingCartIcon,
+    allowedRoles: ['super_admin', 'procurement_officer', 'executive'],
+  },
+  // Agent role pages
+  {
+    name: 'Agent Dashboard',
+    href: '/agents/dashboard',
+    icon: HomeIcon,
+    allowedRoles: ['agent'],
+  },
+  {
+    name: 'Properties',
+    href: '/marketing/properties',
+    icon: BuildingOfficeIcon,
+    allowedRoles: ['agent'],
+  },
+  {
+    name: 'My Commissions',
+    href: '/agents/commissions',
+    icon: CurrencyDollarIcon,
+    allowedRoles: ['agent'],
+  },
+  // Agent Manager role pages
+  {
+    name: 'All Agents',
+    href: '/agents',
+    icon: UsersIcon,
+    allowedRoles: ['super_admin', 'agent_manager', 'executive'],
+  },
+  {
+    name: 'Properties',
+    href: '/marketing/properties',
+    icon: BuildingOfficeIcon,
+    allowedRoles: ['agent_manager'],
+  },
+  {
+    name: 'Team Performance',
+    href: '/agents/manager',
+    icon: ChartBarIcon,
+    allowedRoles: ['super_admin', 'agent_manager', 'executive'],
+  },
+  {
+    name: 'Commissions',
+    href: '/agents/commissions',
+    icon: CurrencyDollarIcon,
+    allowedRoles: ['super_admin', 'agent_manager', 'executive'],
   },
   {
     name: 'Admin',
     href: '/admin',
     icon: Cog6ToothIcon,
+    allowedRoles: ['super_admin'],
   },
 ]
 
@@ -76,15 +221,17 @@ const NavItemComponent = memo(function NavItemComponent({
   isActive,
   onToggle,
   currentPathname,
+  userRoleNames,
 }: {
   item: NavItem
   isExpanded: boolean
   isActive: boolean
   onToggle: () => void
   currentPathname: string
+  userRoleNames: string[]
 }) {
   const hasSubItems = item.subItems && item.subItems.length > 0
-  
+
   const isSubItemActive = (href: string) => {
     if (!currentPathname) return false
     if (href === '/dashboard') {
@@ -93,7 +240,17 @@ const NavItemComponent = memo(function NavItemComponent({
     return currentPathname.startsWith(href)
   }
 
-  if (hasSubItems) {
+  // Filter sub-items based on user roles
+  const visibleSubItems = hasSubItems
+    ? item.subItems!.filter((subItem) => {
+        if (!subItem.allowedRoles || subItem.allowedRoles.length === 0) {
+          return true
+        }
+        return subItem.allowedRoles.some((role) => userRoleNames.includes(role))
+      })
+    : []
+
+  if (hasSubItems && visibleSubItems.length > 0) {
     return (
       <div>
         <button
@@ -116,7 +273,7 @@ const NavItemComponent = memo(function NavItemComponent({
         </button>
         {isExpanded && (
           <div className="ml-4 mt-1 space-y-1">
-            {item.subItems!.map((subItem) => {
+            {visibleSubItems.map((subItem) => {
               const isSubActive = isSubItemActive(subItem.href)
               return (
                 <Link
@@ -158,16 +315,23 @@ const NavItemComponent = memo(function NavItemComponent({
     prevProps.isExpanded === nextProps.isExpanded &&
     prevProps.isActive === nextProps.isActive &&
     prevProps.currentPathname === nextProps.currentPathname &&
-    prevProps.item.name === nextProps.item.name
+    prevProps.item.name === nextProps.item.name &&
+    prevProps.userRoleNames.length === nextProps.userRoleNames.length &&
+    prevProps.userRoleNames.every((role, index) => role === nextProps.userRoleNames[index])
   )
 })
 
 export const Sidebar = memo(function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { loading } = useUser()
+  const { loading, roles } = useUser()
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const initializedRef = useRef(false)
+
+  // Get user's role names
+  const userRoleNames = useMemo(() => {
+    return roles.map((ur) => ur.role?.name).filter(Boolean) as string[]
+  }, [roles])
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -215,8 +379,17 @@ export const Sidebar = memo(function Sidebar() {
     return pathname.startsWith(href)
   }, [pathname])
 
-  // Stable navigation reference
-  const visibleNavigation = navigation
+  // Filter navigation based on user roles
+  const visibleNavigation = useMemo(() => {
+    return navigation.filter((item) => {
+      // If no allowedRoles specified, show to everyone
+      if (!item.allowedRoles || item.allowedRoles.length === 0) {
+        return true
+      }
+      // Check if user has any of the allowed roles
+      return item.allowedRoles.some((role) => userRoleNames.includes(role))
+    })
+  }, [userRoleNames])
 
   // Compute effective expanded sections
   const effectiveExpanded = useMemo(() => {
@@ -268,6 +441,7 @@ export const Sidebar = memo(function Sidebar() {
               isActive={isActive}
               onToggle={() => toggleSection(item.name)}
               currentPathname={pathname}
+              userRoleNames={userRoleNames}
             />
           )
         })}

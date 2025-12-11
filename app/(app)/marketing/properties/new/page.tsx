@@ -133,7 +133,7 @@ export default function NewPropertyPage() {
   }
 
   return (
-    <RoleGuard allowedRoles={['super_admin', 'marketing_officer', 'project_manager']}>
+    <RoleGuard allowedRoles={['super_admin', 'marketing_officer', 'project_manager', 'agent', 'agent_manager', 'executive']}>
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Add New Property</h1>
