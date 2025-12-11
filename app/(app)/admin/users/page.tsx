@@ -10,6 +10,7 @@ import { FormInput } from '@/components/ui/form-input'
 import { FormSelect } from '@/components/ui/form-select'
 import { createClient } from '@/lib/supabase/client'
 import { createUser, updateUser } from '@/app/actions/admin'
+import { createUser as createUserAction } from '@/app/actions/auth'
 import Link from 'next/link'
 
 interface AppUser {
@@ -173,6 +174,7 @@ export default function UsersPage() {
           throw new Error('Password must be at least 6 characters')
         }
 
+<<<<<<< HEAD
         const result = await createUser({
           email: formData.email,
           password: formData.password,
@@ -180,6 +182,15 @@ export default function UsersPage() {
           phone: formData.phone,
           organization_id: formData.organization_id,
           role_id: formData.role_id,
+=======
+        const result = await createUserAction({
+          email: formData.email,
+          password: formData.password,
+          full_name: formData.full_name || undefined,
+          phone: formData.phone || undefined,
+          organization_id: formData.organization_id || undefined,
+          role_id: formData.role_id || undefined,
+>>>>>>> ef818e8b227efcc3cec29f4ab19548515bafd9f8
           is_active: formData.is_active,
         })
 
@@ -187,7 +198,11 @@ export default function UsersPage() {
           throw new Error(result.error)
         }
 
+<<<<<<< HEAD
         setMessage({ type: 'success', text: 'User created successfully! They can now log in with their email and password.' })
+=======
+        setMessage({ type: 'success', text: result.message || 'User created successfully! They can now log in with their email and password.' })
+>>>>>>> ef818e8b227efcc3cec29f4ab19548515bafd9f8
       }
 
       setIsModalOpen(false)
