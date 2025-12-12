@@ -1,187 +1,185 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import {
-  PencilIcon,
-  XMarkIcon,
-  TrashIcon,
-} from '@heroicons/react/24/outline'
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
+import { PencilIcon, XMarkIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 interface FormData {
-  project_id: string
-  category_id: string
-  expense_date: string
-  description: string
-  amount: string
-  vendor: string
-  invoice_number: string
-  payment_status: string
-  payment_date: string
-  payment_method: string
-  notes: string
+  project_id: string;
+  category_id: string;
+  expense_date: string;
+  description: string;
+  amount: string;
+  vendor: string;
+  invoice_number: string;
+  payment_status: string;
+  payment_date: string;
+  payment_method: string;
+  notes: string;
 }
 
 interface FormErrors {
-  project_id?: string
-  category_id?: string
-  expense_date?: string
-  description?: string
-  amount?: string
-  submit?: string
+  project_id?: string;
+  category_id?: string;
+  expense_date?: string;
+  description?: string;
+  amount?: string;
+  submit?: string;
 }
 
 interface Project {
-  id: string
-  name: string
-  project_code: string
+  id: string;
+  name: string;
+  project_code: string;
 }
 
 interface Category {
-  id: string
-  name: string
-  color: string
+  id: string;
+  name: string;
+  color: string;
 }
 
 export default function EditExpensePage() {
-  const router = useRouter()
-  const params = useParams()
-  const expenseId = params.id as string
+  const router = useRouter();
+  const params = useParams();
+  const expenseId = params.id as string;
 
-  const [loading, setLoading] = useState(false)
-  const [loadingData, setLoadingData] = useState(true)
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [projects, setProjects] = useState<Project[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formData, setFormData] = useState<FormData>({
-    project_id: '',
-    category_id: '',
-    expense_date: '',
-    description: '',
-    amount: '',
-    vendor: '',
-    invoice_number: '',
-    payment_status: 'pending',
-    payment_date: '',
-    payment_method: '',
-    notes: '',
-  })
+    project_id: "",
+    category_id: "",
+    expense_date: "",
+    description: "",
+    amount: "",
+    vendor: "",
+    invoice_number: "",
+    payment_status: "pending",
+    payment_date: "",
+    payment_method: "",
+    notes: "",
+  });
 
   useEffect(() => {
-    loadData()
-  }, [expenseId])
+    loadData();
+  }, [expenseId]);
 
   const loadData = async () => {
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
 
       const { data: profile } = await supabase
-        .from('app_users')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .single()
+        .from("app_users")
+        .select("organization_id")
+        .eq("user_id", user.id)
+        .single();
 
-      if (!profile?.organization_id) return
+      if (!(profile as any)?.organization_id) return;
 
       // Load expense data
       const { data: expense } = await supabase
-        .from('project_expenses')
-        .select('*')
-        .eq('id', expenseId)
-        .single()
+        .from("project_expenses")
+        .select("*")
+        .eq("id", expenseId)
+        .single();
 
       if (expense) {
+        const expenseData = expense as any;
         setFormData({
-          project_id: expense.project_id || '',
-          category_id: expense.category_id || '',
-          expense_date: expense.expense_date || '',
-          description: expense.description || '',
-          amount: expense.amount?.toString() || '',
-          vendor: expense.vendor || '',
-          invoice_number: expense.invoice_number || '',
-          payment_status: expense.payment_status || 'pending',
-          payment_date: expense.payment_date || '',
-          payment_method: expense.payment_method || '',
-          notes: expense.notes || '',
-        })
+          project_id: expenseData.project_id || "",
+          category_id: expenseData.category_id || "",
+          expense_date: expenseData.expense_date || "",
+          description: expenseData.description || "",
+          amount: expenseData.amount?.toString() || "",
+          vendor: expenseData.vendor || "",
+          invoice_number: expenseData.invoice_number || "",
+          payment_status: expenseData.payment_status || "pending",
+          payment_date: expenseData.payment_date || "",
+          payment_method: expenseData.payment_method || "",
+          notes: expenseData.notes || "",
+        });
       }
 
       // Load projects
       const { data: projectsData } = await supabase
-        .from('projects')
-        .select('id, name, project_code')
-        .eq('organization_id', profile.organization_id)
-        .order('name')
+        .from("projects")
+        .select("id, name, project_code")
+        .eq("organization_id", (profile as any).organization_id)
+        .order("name");
 
-      setProjects(projectsData || [])
+      setProjects(projectsData || []);
 
       // Load expense categories
       const { data: categoriesData } = await supabase
-        .from('expense_categories')
-        .select('id, name, color')
-        .eq('organization_id', profile.organization_id)
-        .eq('is_active', true)
-        .order('name')
+        .from("expense_categories")
+        .select("id, name, color")
+        .eq("organization_id", (profile as any).organization_id)
+        .eq("is_active", true)
+        .order("name");
 
-      setCategories(categoriesData || [])
+      setCategories(categoriesData || []);
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error("Error loading data:", error);
     } finally {
-      setLoadingData(false)
+      setLoadingData(false);
     }
-  }
+  };
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {}
+    const newErrors: FormErrors = {};
 
     if (!formData.project_id) {
-      newErrors.project_id = 'Project is required'
+      newErrors.project_id = "Project is required";
     }
 
     if (!formData.category_id) {
-      newErrors.category_id = 'Category is required'
+      newErrors.category_id = "Category is required";
     }
 
     if (!formData.expense_date) {
-      newErrors.expense_date = 'Expense date is required'
+      newErrors.expense_date = "Expense date is required";
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = 'Description is required'
+      newErrors.description = "Description is required";
     }
 
     if (!formData.amount) {
-      newErrors.amount = 'Amount is required'
+      newErrors.amount = "Amount is required";
     } else if (isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
-      newErrors.amount = 'Please enter a valid amount greater than 0'
+      newErrors.amount = "Please enter a valid amount greater than 0";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setLoading(true)
-    setErrors({})
+    setLoading(true);
+    setErrors({});
 
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
-      const { error } = await supabase
-        .from('project_expenses')
+      const { error } = await (supabase.from("project_expenses") as any)
         .update({
           project_id: formData.project_id,
           category_id: formData.category_id || null,
@@ -195,55 +193,59 @@ export default function EditExpensePage() {
           payment_method: formData.payment_method || null,
           notes: formData.notes || null,
         })
-        .eq('id', expenseId)
+        .eq("id", expenseId);
 
-      if (error) throw error
+      if (error) throw error;
 
-      router.push('/projects/budget/expenses')
-      router.refresh()
+      router.push("/projects/budget/expenses");
+      router.refresh();
     } catch (error: any) {
-      console.error('Error updating expense:', error)
-      setErrors({ submit: error.message || 'Failed to update expense' })
+      console.error("Error updating expense:", error);
+      setErrors({ submit: error.message || "Failed to update expense" });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       const { error } = await supabase
-        .from('project_expenses')
+        .from("project_expenses")
         .delete()
-        .eq('id', expenseId)
+        .eq("id", expenseId);
 
-      if (error) throw error
+      if (error) throw error;
 
-      router.push('/projects/budget/expenses')
-      router.refresh()
+      router.push("/projects/budget/expenses");
+      router.refresh();
     } catch (error: any) {
-      console.error('Error deleting expense:', error)
-      setErrors({ submit: error.message || 'Failed to delete expense' })
-      setLoading(false)
+      console.error("Error deleting expense:", error);
+      setErrors({ submit: error.message || "Failed to delete expense" });
+      setLoading(false);
     }
-  }
+  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name as keyof FormErrors]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }))
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
-  }
+  };
 
   if (loadingData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -252,13 +254,11 @@ export default function EditExpensePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Edit Expense</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Update expense details
-          </p>
+          <p className="mt-1 text-sm text-gray-500">Update expense details</p>
         </div>
         <Button
           variant="secondary"
-          onClick={() => router.push('/projects/budget/expenses')}
+          onClick={() => router.push("/projects/budget/expenses")}
         >
           <XMarkIcon className="h-5 w-5 mr-2" />
           Cancel
@@ -277,7 +277,10 @@ export default function EditExpensePage() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {/* Project */}
             <div>
-              <label htmlFor="project_id" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="project_id"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Project <span className="text-red-500">*</span>
               </label>
               <select
@@ -287,12 +290,12 @@ export default function EditExpensePage() {
                 onChange={handleChange}
                 className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none sm:text-sm ${
                   errors.project_id
-                    ? 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-                    : 'border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                    ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                    : "border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                 }`}
               >
                 <option value="">Select project</option>
-                {projects.map((project) => (
+                {(projects as any[]).map((project: any) => (
                   <option key={project.id} value={project.id}>
                     {project.project_code} - {project.name}
                   </option>
@@ -305,7 +308,10 @@ export default function EditExpensePage() {
 
             {/* Category */}
             <div>
-              <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="category_id"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Category <span className="text-red-500">*</span>
               </label>
               <select
@@ -315,25 +321,30 @@ export default function EditExpensePage() {
                 onChange={handleChange}
                 className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none sm:text-sm ${
                   errors.category_id
-                    ? 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-                    : 'border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                    ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                    : "border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                 }`}
               >
                 <option value="">Select category</option>
-                {categories.map((category) => (
+                {(categories as any[]).map((category: any) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
                 ))}
               </select>
               {errors.category_id && (
-                <p className="mt-1 text-sm text-red-600">{errors.category_id}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.category_id}
+                </p>
               )}
             </div>
 
             {/* Expense Date */}
             <div>
-              <label htmlFor="expense_date" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="expense_date"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Expense Date <span className="text-red-500">*</span>
               </label>
               <input
@@ -344,18 +355,23 @@ export default function EditExpensePage() {
                 onChange={handleChange}
                 className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none sm:text-sm ${
                   errors.expense_date
-                    ? 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-                    : 'border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                    ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                    : "border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                 }`}
               />
               {errors.expense_date && (
-                <p className="mt-1 text-sm text-red-600">{errors.expense_date}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.expense_date}
+                </p>
               )}
             </div>
 
             {/* Amount */}
             <div>
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="amount"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Amount <span className="text-red-500">*</span>
               </label>
               <div className="relative mt-1">
@@ -372,8 +388,8 @@ export default function EditExpensePage() {
                   onChange={handleChange}
                   className={`block w-full rounded-md border pl-7 pr-3 py-2 shadow-sm focus:outline-none sm:text-sm ${
                     errors.amount
-                      ? 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                      ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                      : "border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   }`}
                   placeholder="0.00"
                 />
@@ -385,7 +401,10 @@ export default function EditExpensePage() {
 
             {/* Description */}
             <div className="sm:col-span-2">
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="description"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Description <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -396,19 +415,24 @@ export default function EditExpensePage() {
                 onChange={handleChange}
                 className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none sm:text-sm ${
                   errors.description
-                    ? 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-                    : 'border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                    ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                    : "border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                 }`}
                 placeholder="Enter expense description"
               />
               {errors.description && (
-                <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.description}
+                </p>
               )}
             </div>
 
             {/* Vendor */}
             <div>
-              <label htmlFor="vendor" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="vendor"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Vendor
               </label>
               <input
@@ -424,7 +448,10 @@ export default function EditExpensePage() {
 
             {/* Invoice Number */}
             <div>
-              <label htmlFor="invoice_number" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="invoice_number"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Invoice Number
               </label>
               <input
@@ -440,7 +467,10 @@ export default function EditExpensePage() {
 
             {/* Payment Status */}
             <div>
-              <label htmlFor="payment_status" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="payment_status"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Payment Status
               </label>
               <select
@@ -459,7 +489,10 @@ export default function EditExpensePage() {
 
             {/* Payment Date */}
             <div>
-              <label htmlFor="payment_date" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="payment_date"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Payment Date
               </label>
               <input
@@ -474,7 +507,10 @@ export default function EditExpensePage() {
 
             {/* Payment Method */}
             <div>
-              <label htmlFor="payment_method" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="payment_method"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Payment Method
               </label>
               <select
@@ -494,7 +530,10 @@ export default function EditExpensePage() {
 
             {/* Notes */}
             <div className="sm:col-span-2">
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="notes"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Notes
               </label>
               <textarea
@@ -525,15 +564,12 @@ export default function EditExpensePage() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => router.push('/projects/budget/expenses')}
+                onClick={() => router.push("/projects/budget/expenses")}
                 disabled={loading}
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-              >
+              <Button type="submit" disabled={loading}>
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -555,9 +591,12 @@ export default function EditExpensePage() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
           <Card className="max-w-md w-full">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Expense</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Delete Expense
+            </h3>
             <p className="text-sm text-gray-500 mb-4">
-              Are you sure you want to delete this expense? This action cannot be undone.
+              Are you sure you want to delete this expense? This action cannot
+              be undone.
             </p>
             <div className="flex justify-end space-x-3">
               <Button
@@ -572,12 +611,12 @@ export default function EditExpensePage() {
                 disabled={loading}
                 className="bg-red-600 hover:bg-red-700"
               >
-                {loading ? 'Deleting...' : 'Delete'}
+                {loading ? "Deleting..." : "Delete"}
               </Button>
             </div>
           </Card>
         </div>
       )}
     </div>
-  )
+  );
 }

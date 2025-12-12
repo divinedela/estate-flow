@@ -1,21 +1,21 @@
-'use client'
+"use client";
 
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { FunnelIcon } from '@heroicons/react/24/outline'
-import { useRouter } from 'next/navigation'
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FunnelIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
 
 interface Agent {
-  id: string
-  first_name: string
-  last_name: string
-  agent_code: string
+  id: string;
+  first_name: string;
+  last_name: string;
+  agent_code: string;
 }
 
 interface CommissionFiltersProps {
-  agents: Agent[]
-  currentAgent?: string
-  currentStatus?: string
+  agents: Agent[];
+  currentAgent?: string;
+  currentStatus?: string;
 }
 
 export function CommissionFilters({
@@ -23,29 +23,33 @@ export function CommissionFilters({
   currentAgent,
   currentStatus,
 }: CommissionFiltersProps) {
-  const router = useRouter()
+  const router = useRouter();
 
   const handleAgentChange = (agentId: string) => {
-    const params = new URLSearchParams()
-    if (agentId) params.set('agent', agentId)
-    if (currentStatus) params.set('status', currentStatus)
+    const params = new URLSearchParams();
+    if (agentId) params.set("agent", agentId);
+    if (currentStatus) params.set("status", currentStatus);
 
-    const queryString = params.toString()
-    router.push(queryString ? `/agents/commissions?${queryString}` : '/agents/commissions')
-  }
+    const queryString = params.toString();
+    router.push(
+      queryString ? `/agents/commissions?${queryString}` : "/agents/commissions"
+    );
+  };
 
   const handleStatusChange = (status: string) => {
-    const params = new URLSearchParams()
-    if (currentAgent) params.set('agent', currentAgent)
-    if (status) params.set('status', status)
+    const params = new URLSearchParams();
+    if (currentAgent) params.set("agent", currentAgent);
+    if (status) params.set("status", status);
 
-    const queryString = params.toString()
-    router.push(queryString ? `/agents/commissions?${queryString}` : '/agents/commissions')
-  }
+    const queryString = params.toString();
+    router.push(
+      queryString ? `/agents/commissions?${queryString}` : "/agents/commissions"
+    );
+  };
 
   const clearFilters = () => {
-    router.push('/agents/commissions')
-  }
+    router.push("/agents/commissions");
+  };
 
   return (
     <Card>
@@ -58,7 +62,7 @@ export function CommissionFilters({
             </label>
             <select
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              value={currentAgent || ''}
+              value={currentAgent || ""}
               onChange={(e) => handleAgentChange(e.target.value)}
             >
               <option value="">All Agents</option>
@@ -76,7 +80,7 @@ export function CommissionFilters({
             </label>
             <select
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              value={currentStatus || ''}
+              value={currentStatus || ""}
               onChange={(e) => handleStatusChange(e.target.value)}
             >
               <option value="">All Statuses</option>
@@ -89,7 +93,7 @@ export function CommissionFilters({
 
           {(currentAgent || currentStatus) && (
             <div className="flex items-end">
-              <Button variant="outline" size="sm" onClick={clearFilters}>
+              <Button variant="secondary" size="sm" onClick={clearFilters}>
                 Clear Filters
               </Button>
             </div>
@@ -97,5 +101,5 @@ export function CommissionFilters({
         </div>
       </div>
     </Card>
-  )
+  );
 }

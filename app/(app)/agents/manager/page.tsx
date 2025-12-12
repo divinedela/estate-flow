@@ -1,13 +1,13 @@
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { RoleGuard } from '@/components/auth/role-guard'
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { RoleGuard } from "@/components/auth/role-guard";
 import {
   getTeamPerformanceStats,
   getTeamLeaderboard,
   getPendingCommissions,
   getAgents,
-} from '@/app/actions/agents'
-import Link from 'next/link'
+} from "@/app/actions/agents";
+import Link from "next/link";
 import {
   UserGroupIcon,
   CurrencyDollarIcon,
@@ -19,60 +19,63 @@ import {
   CalendarIcon,
   ArrowTrendingUpIcon,
   UsersIcon,
-} from '@heroicons/react/24/outline'
+} from "@heroicons/react/24/outline";
 
 export default async function AgentManagerDashboardPage() {
   // Get dashboard data
-  const [statsResult, leaderboardResult, pendingResult, agentsResult] = await Promise.all([
-    getTeamPerformanceStats(),
-    getTeamLeaderboard(10),
-    getPendingCommissions(10),
-    getAgents(),
-  ])
+  const [statsResult, leaderboardResult, pendingResult, agentsResult] =
+    await Promise.all([
+      getTeamPerformanceStats(),
+      getTeamLeaderboard(10),
+      getPendingCommissions(10),
+      getAgents(),
+    ]);
 
-  const stats = statsResult.data
-  const leaderboard = leaderboardResult.data || []
-  const pendingCommissions = pendingResult.data || []
-  const allAgents = agentsResult.data || []
+  const stats = statsResult.data;
+  const leaderboard = leaderboardResult.data || [];
+  const pendingCommissions = pendingResult.data || [];
+  const allAgents = agentsResult.data || [];
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(amount)
-  }
+    }).format(amount);
+  };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-  }
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   const levelColors: Record<string, string> = {
-    junior: 'bg-blue-100 text-blue-800',
-    senior: 'bg-indigo-100 text-indigo-800',
-    team_lead: 'bg-purple-100 text-purple-800',
-    manager: 'bg-pink-100 text-pink-800',
-  }
+    junior: "bg-blue-100 text-blue-800",
+    senior: "bg-indigo-100 text-indigo-800",
+    team_lead: "bg-purple-100 text-purple-800",
+    manager: "bg-pink-100 text-pink-800",
+  };
 
   const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    approved: 'bg-blue-100 text-blue-800',
-    paid: 'bg-green-100 text-green-800',
-    rejected: 'bg-red-100 text-red-800',
-  }
+    pending: "bg-yellow-100 text-yellow-800",
+    approved: "bg-blue-100 text-blue-800",
+    paid: "bg-green-100 text-green-800",
+    rejected: "bg-red-100 text-red-800",
+  };
 
   return (
-    <RoleGuard allowedRoles={['agent_manager', 'super_admin', 'executive']}>
+    <RoleGuard allowedRoles={["agent_manager", "super_admin", "executive"]}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Team Management Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Team Management Dashboard
+            </h1>
             <p className="mt-1 text-sm text-gray-500">
               Overview of your team's performance and activities
             </p>
@@ -91,9 +94,15 @@ export default async function AgentManagerDashboardPage() {
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm font-medium">Team Members</p>
-                <p className="text-3xl font-bold mt-2">{stats.totalTeamMembers}</p>
-                <p className="text-blue-100 text-xs mt-1">{stats.activeAgents} active</p>
+                <p className="text-blue-100 text-sm font-medium">
+                  Team Members
+                </p>
+                <p className="text-3xl font-bold mt-2">
+                  {stats.totalTeamMembers}
+                </p>
+                <p className="text-blue-100 text-xs mt-1">
+                  {stats.activeAgents} active
+                </p>
               </div>
               <div className="p-3 bg-blue-400/30 rounded-lg">
                 <UserGroupIcon className="h-8 w-8" />
@@ -105,8 +114,12 @@ export default async function AgentManagerDashboardPage() {
           <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-green-100 text-sm font-medium">Total Commission</p>
-                <p className="text-3xl font-bold mt-2">{formatCurrency(stats.totalTeamCommission)}</p>
+                <p className="text-green-100 text-sm font-medium">
+                  Total Commission
+                </p>
+                <p className="text-3xl font-bold mt-2">
+                  {formatCurrency(stats.totalTeamCommission)}
+                </p>
                 <p className="text-green-100 text-xs mt-1">All time</p>
               </div>
               <div className="p-3 bg-green-400/30 rounded-lg">
@@ -119,9 +132,15 @@ export default async function AgentManagerDashboardPage() {
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-100 text-sm font-medium">This Month</p>
-                <p className="text-3xl font-bold mt-2">{formatCurrency(stats.monthlyTeamCommission)}</p>
-                <p className="text-purple-100 text-xs mt-1">{stats.monthlyTeamSales} sales</p>
+                <p className="text-purple-100 text-sm font-medium">
+                  This Month
+                </p>
+                <p className="text-3xl font-bold mt-2">
+                  {formatCurrency(stats.monthlyTeamCommission)}
+                </p>
+                <p className="text-purple-100 text-xs mt-1">
+                  {stats.monthlyTeamSales} sales
+                </p>
               </div>
               <div className="p-3 bg-purple-400/30 rounded-lg">
                 <CalendarIcon className="h-8 w-8" />
@@ -133,8 +152,12 @@ export default async function AgentManagerDashboardPage() {
           <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-indigo-100 text-sm font-medium">Total Sales</p>
-                <p className="text-3xl font-bold mt-2">{stats.totalTeamSales}</p>
+                <p className="text-indigo-100 text-sm font-medium">
+                  Total Sales
+                </p>
+                <p className="text-3xl font-bold mt-2">
+                  {stats.totalTeamSales}
+                </p>
                 <p className="text-indigo-100 text-xs mt-1">All agents</p>
               </div>
               <div className="p-3 bg-indigo-400/30 rounded-lg">
@@ -150,10 +173,12 @@ export default async function AgentManagerDashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <TrophyIcon className="h-5 w-5 text-yellow-500" />
-                <h3 className="text-lg font-semibold text-gray-900">Team Leaderboard</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Team Leaderboard
+                </h3>
               </div>
               <Link href="/agents">
-                <Button variant="outline" size="sm">
+                <Button variant="secondary" size="sm">
                   View All
                 </Button>
               </Link>
@@ -178,12 +203,12 @@ export default async function AgentManagerDashboardPage() {
                         <div
                           className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
                             index === 0
-                              ? 'bg-yellow-100 text-yellow-700'
+                              ? "bg-yellow-100 text-yellow-700"
                               : index === 1
-                              ? 'bg-gray-200 text-gray-700'
+                              ? "bg-gray-200 text-gray-700"
                               : index === 2
-                              ? 'bg-orange-100 text-orange-700'
-                              : 'bg-gray-100 text-gray-600'
+                              ? "bg-orange-100 text-orange-700"
+                              : "bg-gray-100 text-gray-600"
                           }`}
                         >
                           {index + 1}
@@ -198,13 +223,16 @@ export default async function AgentManagerDashboardPage() {
                           </p>
                           <span
                             className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-                              levelColors[agent.agent_level] || levelColors.junior
+                              levelColors[agent.agent_level] ||
+                              levelColors.junior
                             }`}
                           >
-                            {agent.agent_level?.replace('_', ' ')}
+                            {agent.agent_level?.replace("_", " ")}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500">{agent.agent_code}</p>
+                        <p className="text-xs text-gray-500">
+                          {agent.agent_code}
+                        </p>
                       </div>
 
                       {/* Stats */}
@@ -212,7 +240,9 @@ export default async function AgentManagerDashboardPage() {
                         <p className="text-sm font-semibold text-gray-900">
                           {formatCurrency(agent.total_commission_earned || 0)}
                         </p>
-                        <p className="text-xs text-gray-500">{agent.total_sales_count || 0} sales</p>
+                        <p className="text-xs text-gray-500">
+                          {agent.total_sales_count || 0} sales
+                        </p>
                       </div>
                     </div>
                   </Link>
@@ -226,7 +256,9 @@ export default async function AgentManagerDashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <ClockIcon className="h-5 w-5 text-yellow-500" />
-                <h3 className="text-lg font-semibold text-gray-900">Pending Approvals</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Pending Approvals
+                </h3>
               </div>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                 {pendingCommissions.length}
@@ -237,7 +269,9 @@ export default async function AgentManagerDashboardPage() {
               <div className="text-center py-8">
                 <CheckCircleIcon className="mx-auto h-12 w-12 text-green-400" />
                 <p className="mt-2 text-sm text-gray-500">All caught up!</p>
-                <p className="text-xs text-gray-400 mt-1">No pending commissions to review</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  No pending commissions to review
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -250,14 +284,15 @@ export default async function AgentManagerDashboardPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="text-sm font-medium text-gray-900">
-                            {commission.agent?.first_name} {commission.agent?.last_name}
+                            {commission.agent?.first_name}{" "}
+                            {commission.agent?.last_name}
                           </p>
                           <span className="text-xs text-gray-500">
                             ({commission.agent?.agent_code})
                           </span>
                         </div>
                         <p className="text-xs text-gray-600 mb-1">
-                          {commission.deal_description || 'Commission'}
+                          {commission.deal_description || "Commission"}
                         </p>
                         <p className="text-xs text-gray-500">
                           {formatDate(commission.created_at)}
@@ -286,7 +321,9 @@ export default async function AgentManagerDashboardPage() {
 
         {/* Team Overview */}
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Overview</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Team Overview
+          </h3>
 
           {allAgents.length === 0 ? (
             <div className="text-center py-8">
@@ -329,7 +366,9 @@ export default async function AgentManagerDashboardPage() {
                           <p className="text-sm font-medium text-gray-900">
                             {agent.first_name} {agent.last_name}
                           </p>
-                          <p className="text-xs text-gray-500">{agent.agent_code}</p>
+                          <p className="text-xs text-gray-500">
+                            {agent.agent_code}
+                          </p>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -338,15 +377,15 @@ export default async function AgentManagerDashboardPage() {
                             levelColors[agent.agent_level] || levelColors.junior
                           }`}
                         >
-                          {agent.agent_level?.replace('_', ' ')}
+                          {agent.agent_level?.replace("_", " ")}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                            agent.employment_status === 'active'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
+                            agent.employment_status === "active"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           {agent.employment_status}
@@ -360,7 +399,7 @@ export default async function AgentManagerDashboardPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                         <Link href={`/agents/${agent.id}`}>
-                          <Button variant="outline" size="sm">
+                          <Button variant="secondary" size="sm">
                             View
                           </Button>
                         </Link>
@@ -375,25 +414,27 @@ export default async function AgentManagerDashboardPage() {
 
         {/* Quick Actions */}
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Quick Actions
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Link href="/agents/new" className="block">
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="secondary" className="w-full justify-start">
                 <UserGroupIcon className="h-4 w-4 mr-2" />
                 Add New Agent
               </Button>
             </Link>
             <Link href="/agents" className="block">
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="secondary" className="w-full justify-start">
                 <UsersIcon className="h-4 w-4 mr-2" />
                 View All Agents
               </Button>
             </Link>
-            <Button variant="outline" className="w-full justify-start">
+            <Button variant="secondary" className="w-full justify-start">
               <ArrowTrendingUpIcon className="h-4 w-4 mr-2" />
               Performance Reports
             </Button>
-            <Button variant="outline" className="w-full justify-start">
+            <Button variant="secondary" className="w-full justify-start">
               <CurrencyDollarIcon className="h-4 w-4 mr-2" />
               Commission Reports
             </Button>
@@ -401,5 +442,5 @@ export default async function AgentManagerDashboardPage() {
         </Card>
       </div>
     </RoleGuard>
-  )
+  );
 }
