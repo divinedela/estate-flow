@@ -26,6 +26,9 @@ import {
   ChartBarIcon,
   ChatBubbleLeftRightIcon,
   UsersIcon,
+  FireIcon,
+  PhoneIcon,
+  BuildingStorefrontIcon,
 } from '@heroicons/react/24/outline'
 import { useUser } from '@/lib/contexts/user-context'
 import { createClient } from '@/lib/supabase/client'
@@ -136,7 +139,44 @@ const navigation: NavItem[] = [
     name: 'Marketing / CRM',
     href: '/marketing',
     icon: MegaphoneIcon,
-    allowedRoles: ['super_admin', 'marketing_officer', 'executive'],
+    allowedRoles: ['super_admin', 'executive'],
+  },
+  // Marketing Officer - Individual pages
+  {
+    name: 'Marketing Dashboard',
+    href: '/marketing',
+    icon: HomeIcon,
+    allowedRoles: ['marketing_officer'],
+  },
+  {
+    name: 'Leads',
+    href: '/marketing/leads',
+    icon: FireIcon,
+    allowedRoles: ['marketing_officer'],
+  },
+  {
+    name: 'Team',
+    href: '/marketing/team',
+    icon: UsersIcon,
+    allowedRoles: ['marketing_officer'],
+  },
+  {
+    name: 'Contacts',
+    href: '/marketing/contacts',
+    icon: PhoneIcon,
+    allowedRoles: ['marketing_officer'],
+  },
+  {
+    name: 'Properties',
+    href: '/marketing/properties',
+    icon: BuildingStorefrontIcon,
+    allowedRoles: ['marketing_officer'],
+  },
+  {
+    name: 'Campaigns',
+    href: '/marketing/campaigns',
+    icon: MegaphoneIcon,
+    allowedRoles: ['marketing_officer'],
   },
   {
     name: 'Projects',
@@ -205,6 +245,56 @@ const navigation: NavItem[] = [
     href: '/agents/commissions',
     icon: CurrencyDollarIcon,
     allowedRoles: ['super_admin', 'agent_manager', 'executive'],
+  },
+  // Marketing Team Member role pages
+  {
+    name: 'My Dashboard',
+    href: '/marketing-team',
+    icon: HomeIcon,
+    allowedRoles: ['marketing_team_member'],
+  },
+  {
+    name: 'My Leads',
+    href: '/marketing/leads',
+    icon: MegaphoneIcon,
+    allowedRoles: ['marketing_team_member'],
+  },
+  {
+    name: 'Contacts',
+    href: '/marketing/contacts',
+    icon: UserGroupIcon,
+    allowedRoles: ['marketing_team_member'],
+  },
+  // Employee Self-Service Portal
+  {
+    name: 'My Dashboard',
+    href: '/employee',
+    icon: HomeIcon,
+    allowedRoles: ['employee'],
+  },
+  {
+    name: 'My Profile',
+    href: '/employee/profile',
+    icon: UserGroupIcon,
+    allowedRoles: ['employee'],
+  },
+  {
+    name: 'My Leave',
+    href: '/employee/leave',
+    icon: CalendarDaysIcon,
+    allowedRoles: ['employee'],
+  },
+  {
+    name: 'My Attendance',
+    href: '/employee/attendance',
+    icon: ClockIcon,
+    allowedRoles: ['employee'],
+  },
+  {
+    name: 'My Documents',
+    href: '/employee/documents',
+    icon: DocumentTextIcon,
+    allowedRoles: ['employee'],
   },
   {
     name: 'Admin',

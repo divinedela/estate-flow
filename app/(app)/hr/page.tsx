@@ -413,8 +413,6 @@ export default async function HRPage() {
   const quickLinks = [
     { name: 'Employees', href: '/hr/employees', icon: UserGroupIcon, color: 'bg-blue-500', description: 'Manage employee records' },
     { name: 'Leave Management', href: '/hr/leave', icon: CalendarDaysIcon, color: 'bg-green-500', description: 'Handle leave requests' },
-    { name: 'Attendance', href: '/hr/attendance', icon: ClockIcon, color: 'bg-purple-500', description: 'Track attendance' },
-    { name: 'Documents', href: '/hr/documents', icon: DocumentTextIcon, color: 'bg-orange-500', description: 'Employee documents' },
   ]
 
   return (
@@ -673,145 +671,6 @@ export default async function HRPage() {
             )}
           </Card>
 
-          {/* Document Management Section */}
-          <Card>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Document Management</h2>
-              <Link href="/hr/documents" className="text-sm text-indigo-600 hover:text-indigo-500">
-                Manage documents →
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <ExclamationTriangleIcon className="h-5 w-5 text-red-600" />
-                  <span className="text-2xl font-bold text-red-600">{stats.documentExpiry.overdue}</span>
-                </div>
-                <p className="text-xs font-medium text-red-700">Overdue</p>
-              </div>
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <ClockIcon className="h-5 w-5 text-amber-600" />
-                  <span className="text-2xl font-bold text-amber-600">{stats.documentExpiry.expiring30Days}</span>
-                </div>
-                <p className="text-xs font-medium text-amber-700">Expiring in 30 days</p>
-              </div>
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <CalendarDaysIcon className="h-5 w-5 text-yellow-600" />
-                  <span className="text-2xl font-bold text-yellow-600">{stats.documentExpiry.expiring60Days}</span>
-                </div>
-                <p className="text-xs font-medium text-yellow-700">Expiring in 60 days</p>
-              </div>
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <CheckCircleIcon className="h-5 w-5 text-green-600" />
-                  <span className="text-2xl font-bold text-green-600">{stats.documentExpiry.valid}</span>
-                </div>
-                <p className="text-xs font-medium text-green-700">Valid</p>
-              </div>
-            </div>
-            {(stats.documentExpiry.overdue > 0 || stats.documentExpiry.expiring30Days > 0) && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <ExclamationTriangleIcon className="h-5 w-5 text-red-600" />
-                  <p className="text-sm font-medium text-red-700">
-                    {stats.documentExpiry.overdue} document(s) need immediate renewal, {stats.documentExpiry.expiring30Days} expiring within 30 days
-                  </p>
-                </div>
-              </div>
-            )}
-          </Card>
-
-          {/* Attendance Section */}
-          <Card>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Attendance</h2>
-              <Link href="/hr/attendance" className="text-sm text-indigo-600 hover:text-indigo-500">
-                View all logs →
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Today&apos;s Status</h3>
-                  <div className="px-3 py-1 bg-indigo-100 rounded-full">
-                    <span className="text-sm font-bold text-indigo-700">{stats.attendanceRate}%</span>
-                    <span className="text-xs text-indigo-600 ml-1">Attendance Rate</span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircleIcon className="h-5 w-5 text-green-600" />
-                      <span className="text-2xl font-bold text-green-600">{stats.attendanceToday.present}</span>
-                    </div>
-                    <p className="text-xs font-medium text-green-700">Present</p>
-                  </div>
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <XCircleIcon className="h-5 w-5 text-red-600" />
-                      <span className="text-2xl font-bold text-red-600">{stats.attendanceToday.absent}</span>
-                    </div>
-                    <p className="text-xs font-medium text-red-700">Absent</p>
-                  </div>
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ClockIcon className="h-5 w-5 text-yellow-600" />
-                      <span className="text-2xl font-bold text-yellow-600">{stats.attendanceToday.late}</span>
-                    </div>
-                    <p className="text-xs font-medium text-yellow-700">Late</p>
-                  </div>
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CalendarDaysIcon className="h-5 w-5 text-blue-600" />
-                      <span className="text-2xl font-bold text-blue-600">{stats.attendanceToday.onLeave}</span>
-                    </div>
-                    <p className="text-xs font-medium text-blue-700">On Leave</p>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Absent Employees</h3>
-                {stats.absentEmployees.length === 0 ? (
-                  <div className="text-center py-6 bg-gray-50 rounded-lg">
-                    <CheckCircleIcon className="h-8 w-8 text-green-400 mx-auto" />
-                    <p className="mt-2 text-sm text-gray-500">All employees are present today</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {stats.absentEmployees.map((employee) => (
-                      <div key={employee.id} className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-                              <span className="text-red-600 font-medium text-xs">
-                                {employee.first_name[0]}{employee.last_name[0]}
-                              </span>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {employee.first_name} {employee.last_name}
-                              </p>
-                              <p className="text-xs text-gray-500">{employee.department || 'Unassigned'}</p>
-                            </div>
-                          </div>
-                          <XCircleIcon className="h-5 w-5 text-red-500" />
-                        </div>
-                      </div>
-                    ))}
-                    {stats.absentEmployees.length >= 10 && (
-                      <Link href="/hr/attendance">
-                        <p className="text-sm text-indigo-600 hover:text-indigo-500 text-center mt-2">
-                          View all absent employees →
-                        </p>
-                      </Link>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
 
           {/* Recruitment Section */}
           <Card>
@@ -851,7 +710,7 @@ export default async function HRPage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900">Quick Actions</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Link href="/hr/employees/new">
                 <div className="p-4 bg-white border-2 border-indigo-200 rounded-lg hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer group">
                   <div className="flex flex-col items-center text-center">
@@ -879,26 +738,6 @@ export default async function HRPage() {
                       <UserGroupIcon className="h-6 w-6 text-blue-600" />
                     </div>
                     <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600">View Employees</p>
-                  </div>
-                </div>
-              </Link>
-              <Link href="/hr/documents">
-                <div className="p-4 bg-white border-2 border-orange-200 rounded-lg hover:border-orange-400 hover:shadow-md transition-all cursor-pointer group">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-orange-100 rounded-lg mb-3 group-hover:bg-orange-200 transition-colors">
-                      <DocumentTextIcon className="h-6 w-6 text-orange-600" />
-                    </div>
-                    <p className="text-sm font-semibold text-gray-900 group-hover:text-orange-600">Manage Documents</p>
-                  </div>
-                </div>
-              </Link>
-              <Link href="/hr/attendance">
-                <div className="p-4 bg-white border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:shadow-md transition-all cursor-pointer group">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-purple-100 rounded-lg mb-3 group-hover:bg-purple-200 transition-colors">
-                      <ClockIcon className="h-6 w-6 text-purple-600" />
-                    </div>
-                    <p className="text-sm font-semibold text-gray-900 group-hover:text-purple-600">View Attendance</p>
                   </div>
                 </div>
               </Link>

@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card'
 import { RoleGuard } from '@/components/auth/role-guard'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { 
+import {
   FireIcon,
   UserPlusIcon,
   MegaphoneIcon,
@@ -17,6 +17,7 @@ import {
   SparklesIcon,
   ClockIcon,
   CheckCircleIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline'
 
 interface Contact {
@@ -224,6 +225,7 @@ export default async function MarketingPage() {
 
   const quickLinks = [
     { name: 'Leads', href: '/marketing/leads', icon: FireIcon, color: 'bg-red-500', description: 'Manage sales leads' },
+    { name: 'Team', href: '/marketing/team', icon: UserGroupIcon, color: 'bg-indigo-500', description: 'Manage team members' },
     { name: 'Contacts', href: '/marketing/contacts', icon: PhoneIcon, color: 'bg-blue-500', description: 'Customer contacts' },
     { name: 'Properties', href: '/marketing/properties', icon: BuildingStorefrontIcon, color: 'bg-green-500', description: 'Property listings' },
     { name: 'Campaigns', href: '/marketing/campaigns', icon: MegaphoneIcon, color: 'bg-purple-500', description: 'Marketing campaigns' },
